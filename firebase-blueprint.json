@@ -1,0 +1,152 @@
+{
+  "entities": {
+    "Product": {
+      "title": "Product",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "slug": { "type": "string" },
+        "price": { "type": "number" },
+        "salePrice": { "type": "number" },
+        "category": { "type": "string" },
+        "collection": { "type": "string" },
+        "sku": { "type": "string" },
+        "description": { "type": "string" },
+        "details": { "type": "array", "items": { "type": "string" } },
+        "fabric": { "type": "string" },
+        "fit": { "type": "string" },
+        "careInstructions": { "type": "string" },
+        "colors": { "type": "array" },
+        "sizes": { "type": "array" },
+        "threeDModelUrl": { "type": "string" },
+        "threeSixtyFrames": { "type": "array" },
+        "isFeatured": { "type": "boolean" },
+        "isNewDrop": { "type": "boolean" },
+        "isSoldOut": { "type": "boolean" },
+        "status": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "name", "price", "category"]
+    },
+    "Collection": {
+      "title": "Collection",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "slug": { "type": "string" },
+        "subtitle": { "type": "string" },
+        "description": { "type": "string" },
+        "coverImage": { "type": "string" },
+        "dropDate": { "type": "string" },
+        "active": { "type": "boolean" }
+      },
+      "required": ["id", "name", "slug"]
+    },
+    "Order": {
+      "title": "Order",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "customerName": { "type": "string" },
+        "customerPhone": { "type": "string" },
+        "customerEmail": { "type": "string" },
+        "shippingAddress": { "type": "string" },
+        "city": { "type": "string" },
+        "region": { "type": "string" },
+        "items": { "type": "array" },
+        "subtotal": { "type": "number" },
+        "shippingFee": { "type": "number" },
+        "total": { "type": "number" },
+        "paymentMethod": { "type": "string" },
+        "status": { "type": "string" },
+        "notes": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "customerName", "customerPhone", "items", "total", "status"]
+    },
+    "Advertisement": {
+      "title": "Advertisement",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "subtitle": { "type": "string" },
+        "ctaText": { "type": "string" },
+        "ctaLink": { "type": "string" },
+        "image": { "type": "string" },
+        "placement": { "type": "string" },
+        "active": { "type": "boolean" }
+      },
+      "required": ["id", "title"]
+    },
+    "DeliveryZone": {
+      "title": "DeliveryZone",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "region": { "type": "string" },
+        "fee": { "type": "number" },
+        "estimatedDays": { "type": "string" },
+        "active": { "type": "boolean" }
+      },
+      "required": ["id", "region", "fee"]
+    },
+    "SiteSettings": {
+      "title": "SiteSettings",
+      "type": "object",
+      "properties": {
+        "brandName": { "type": "string" },
+        "slogan": { "type": "string" },
+        "heroTitle": { "type": "string" },
+        "heroSubtitle": { "type": "string" },
+        "announcementText": { "type": "string" },
+        "announcementActive": { "type": "boolean" },
+        "currency": { "type": "string" }
+      }
+    },
+    "AuditLog": {
+      "title": "AuditLog",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "action": { "type": "string" },
+        "details": { "type": "string" },
+        "timestamp": { "type": "string" },
+        "adminEmail": { "type": "string" }
+      },
+      "required": ["id", "action", "timestamp"]
+    }
+  },
+  "firestore": {
+    "/products/{productId}": {
+      "schema": "Product",
+      "description": "Catalog of RWYSE streetwear products"
+    },
+    "/collections/{collectionId}": {
+      "schema": "Collection",
+      "description": "Collections and drops"
+    },
+    "/orders/{orderId}": {
+      "schema": "Order",
+      "description": "Client orders with Cash On Delivery"
+    },
+    "/advertisements/{adId}": {
+      "schema": "Advertisement",
+      "description": "Campaign banners and visuals"
+    },
+    "/deliveryZones/{zoneId}": {
+      "schema": "DeliveryZone",
+      "description": "Nationwide delivery tariffs and transit times"
+    },
+    "/siteSettings/{settingId}": {
+      "schema": "SiteSettings",
+      "description": "Store configuration and announcements"
+    },
+    "/auditLogs/{logId}": {
+      "schema": "AuditLog",
+      "description": "Administrator audit trail logs"
+    }
+  }
+}

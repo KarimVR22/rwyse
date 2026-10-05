@@ -1,0 +1,8 @@
+{
+  "name": "Remix RWYSE | Rise with you - Contemporary Streetwear \u0026 Luxury Apparel",
+  "description": "Official flagship store for RWYSE. Modern streetwear, heavyweight oversized apparel, drops, editorial lookbooks, and seamless online shopping.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

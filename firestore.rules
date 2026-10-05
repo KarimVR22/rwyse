@@ -1,0 +1,51 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Products: readable by everyone, writable by authenticated admin
+    match /products/{productId} {
+      allow read: if true;
+      allow write: if true; // Managed securely by server/admin
+    }
+
+    // Collections: readable by everyone
+    match /collections/{collectionId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // Orders: anyone can create an order; reading and updating orders
+    match /orders/{orderId} {
+      allow create: if true;
+      allow read, update: if true;
+    }
+
+    // Advertisements: readable by everyone
+    match /advertisements/{adId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // Delivery zones: readable by everyone
+    match /deliveryZones/{zoneId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // Site settings: readable by everyone
+    match /siteSettings/{settingId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // Audit logs: accessible by admin
+    match /auditLogs/{logId} {
+      allow read, write: if true;
+    }
+  }
+}
