@@ -2,22 +2,33 @@ import React, { useState } from 'react';
 import { useStore } from '../../context/StoreContext';
 import { defaultSizeGuide } from '../../data/initialData';
 import { X, Check } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 
 export const SizeGuideModal: React.FC = () => {
   const { isSizeGuideOpen, setIsSizeGuideOpen } = useStore();
   const [unit, setUnit] = useState<'cm' | 'inches'>('cm');
 
-  if (!isSizeGuideOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
-      <div
-        className="fixed inset-0 bg-black/80 backdrop-blur-sm transition-opacity"
-        onClick={() => setIsSizeGuideOpen(false)}
-      />
+    <AnimatePresence>
+      {isSizeGuideOpen && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 bg-black/80 backdrop-blur-sm"
+            onClick={() => setIsSizeGuideOpen(false)}
+          />
 
-      <div className="min-h-full flex items-center justify-center p-4 sm:p-6">
-        <div className="relative w-full max-w-2xl bg-[#111116] border border-neutral-800 text-neutral-100 shadow-2xl p-6 sm:p-8 z-10">
+          <div className="min-h-full flex items-center justify-center p-4 sm:p-6">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              transition={{ duration: 0.22, ease: 'easeOut' }}
+              className="relative w-full max-w-2xl bg-[#111116] border border-neutral-800 text-neutral-100 shadow-2xl p-6 sm:p-8 z-10"
+            >
           
           {/* Header */}
           <div className="flex items-center justify-between pb-5 border-b border-neutral-800">
@@ -124,8 +135,10 @@ export const SizeGuideModal: React.FC = () => {
             </button>
           </div>
 
+            </motion.div>
+          </div>
         </div>
-      </div>
-    </div>
+      )}
+    </AnimatePresence>
   );
 };

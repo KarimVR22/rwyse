@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useStore } from '../../context/StoreContext';
 import { X, Plus, Minus, ArrowRight, Ruler, Check } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 
 interface QuickViewModalProps {
   onNavigateToProduct: (slug: string) => void;
@@ -20,37 +21,48 @@ export const QuickViewModal: React.FC<QuickViewModalProps> = ({ onNavigateToProd
   const [quantity, setQuantity] = useState(1);
   const [selectedImgIdx, setSelectedImgIdx] = useState(0);
 
-  if (!quickViewProduct) return null;
-
-  const activeColor = quickViewProduct.colors[selectedColorIdx] || quickViewProduct.colors[0];
-  const images = activeColor.images.length > 0 ? activeColor.images : quickViewProduct.colors[0]?.images || [];
+  const activeColor = quickViewProduct ? quickViewProduct.colors[selectedColorIdx] || quickViewProduct.colors[0] : null;
+  const images = activeColor ? (activeColor.images.length > 0 ? activeColor.images : quickViewProduct?.colors[0]?.images || []) : [];
   const currentImg = images[selectedImgIdx] || images[0];
 
-  const currentSizeObj = quickViewProduct.sizes.find((s) => s.size === selectedSize);
+  const currentSizeObj = quickViewProduct?.sizes.find((s) => s.size === selectedSize);
   const isOutOfStock = currentSizeObj ? currentSizeObj.stock === 0 : false;
   const isLowStock = currentSizeObj ? currentSizeObj.stock > 0 && currentSizeObj.stock <= 4 : false;
 
   const handleAddToCart = () => {
-    if (!selectedSize || isOutOfStock) return;
+    if (!quickViewProduct || !selectedSize || isOutOfStock || !activeColor) return;
     addToCart(quickViewProduct, activeColor.name, selectedSize, quantity);
     setQuickViewProduct(null);
   };
 
   const handleFullView = () => {
+    if (!quickViewProduct) return;
     const slug = quickViewProduct.slug;
     setQuickViewProduct(null);
     onNavigateToProduct(slug);
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
-      <div
-        className="fixed inset-0 bg-black/80 backdrop-blur-sm transition-opacity"
-        onClick={() => setQuickViewProduct(null)}
-      />
+    <AnimatePresence>
+      {quickViewProduct && activeColor && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 bg-black/80 backdrop-blur-sm"
+            onClick={() => setQuickViewProduct(null)}
+          />
 
-      <div className="min-h-full flex items-center justify-center p-4 sm:p-6">
-        <div className="relative w-full max-w-3xl bg-[#111116] border border-neutral-800 text-neutral-100 shadow-2xl overflow-hidden z-10">
+          <div className="min-h-full flex items-center justify-center p-4 sm:p-6">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.94, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.94, y: 10 }}
+              transition={{ duration: 0.25, ease: 'easeOut' }}
+              className="relative w-full max-w-3xl bg-[#111116] border border-neutral-800 text-neutral-100 shadow-2xl overflow-hidden z-10"
+            >
           {/* Close button */}
           <button
             onClick={() => setQuickViewProduct(null)}
@@ -250,8 +262,10 @@ export const QuickViewModal: React.FC<QuickViewModalProps> = ({ onNavigateToProd
 
             </div>
           </div>
+            </motion.div>
+          </div>
         </div>
-      </div>
-    </div>
+      )}
+    </AnimatePresence>
   );
 };

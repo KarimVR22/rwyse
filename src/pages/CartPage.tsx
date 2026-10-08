@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { useStore } from '../context/StoreContext';
 import { Plus, Minus, Trash2, ArrowRight, ArrowLeft, Tag, CheckCircle2, ShieldCheck, Truck } from 'lucide-react';
 
@@ -110,87 +111,97 @@ export const CartPage: React.FC<CartPageProps> = ({ onNavigate, onNavigateToProd
           {/* Items Table Left (8 Cols) */}
           <div className="lg:col-span-8">
             <div className="border-t border-neutral-800 divide-y divide-neutral-800/80">
-              {cart.map((item) => (
-                <div key={item.id} className="py-6 flex flex-col sm:flex-row gap-6 items-start">
-                  
-                  {/* Thumbnail */}
-                  <div
-                    onClick={() => onNavigateToProduct(item.product.slug)}
-                    className="w-24 sm:w-28 aspect-[3/4] bg-neutral-900 border border-neutral-800 shrink-0 cursor-pointer overflow-hidden"
+              <AnimatePresence initial={false}>
+                {cart.map((item) => (
+                  <motion.div
+                    key={item.id}
+                    layout
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.25 }}
+                    className="py-6 flex flex-col sm:flex-row gap-6 items-start overflow-hidden"
                   >
-                    <img
-                      src={
-                        item.product.colors.find((c) => c.name === item.selectedColor)?.images[0] ||
-                        item.product.colors[0]?.images[0]
-                      }
-                      alt={item.product.name}
-                      className="w-full h-full object-cover hover:scale-105 transition-transform"
-                      referrerPolicy="no-referrer"
-                    />
-                  </div>
+                    
+                    {/* Thumbnail */}
+                    <div
+                      onClick={() => onNavigateToProduct(item.product.slug)}
+                      className="w-24 sm:w-28 aspect-[3/4] bg-neutral-900 border border-neutral-800 shrink-0 cursor-pointer overflow-hidden"
+                    >
+                      <img
+                        src={
+                          item.product.colors.find((c) => c.name === item.selectedColor)?.images[0] ||
+                          item.product.colors[0]?.images[0]
+                        }
+                        alt={item.product.name}
+                        className="w-full h-full object-cover hover:scale-105 transition-transform"
+                        referrerPolicy="no-referrer"
+                      />
+                    </div>
 
-                  {/* Details */}
-                  <div className="flex-1 flex flex-col justify-between w-full h-full min-h-[110px]">
-                    <div>
-                      <div className="flex items-start justify-between gap-4">
-                        <div>
-                          <span className="text-[10px] text-neutral-400 uppercase tracking-widest font-mono">
-                            {item.product.category}
-                          </span>
-                          <h3
-                            onClick={() => onNavigateToProduct(item.product.slug)}
-                            className="text-sm sm:text-base font-semibold text-white uppercase tracking-wider hover:underline cursor-pointer"
+                    {/* Details */}
+                    <div className="flex-1 flex flex-col justify-between w-full h-full min-h-[110px]">
+                      <div>
+                        <div className="flex items-start justify-between gap-4">
+                          <div>
+                            <span className="text-[10px] text-neutral-400 uppercase tracking-widest font-mono">
+                              {item.product.category}
+                            </span>
+                            <h3
+                              onClick={() => onNavigateToProduct(item.product.slug)}
+                              className="text-sm sm:text-base font-semibold text-white uppercase tracking-wider hover:underline cursor-pointer"
+                            >
+                              {item.product.name}
+                            </h3>
+                          </div>
+                          <button
+                            onClick={() => removeFromCart(item.id)}
+                            className="text-neutral-500 hover:text-red-400 transition-colors p-1 cursor-pointer"
+                            aria-label="Remove item"
                           >
-                            {item.product.name}
-                          </h3>
+                            <Trash2 className="w-4 h-4" />
+                          </button>
                         </div>
-                        <button
-                          onClick={() => removeFromCart(item.id)}
-                          className="text-neutral-500 hover:text-red-400 transition-colors p-1 cursor-pointer"
-                          aria-label="Remove item"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+
+                        <div className="mt-2 flex items-center gap-3 text-xs text-neutral-400">
+                          <span>Color: <strong className="text-white">{item.selectedColor}</strong></span>
+                          <span aria-hidden="true">·</span>
+                          <span>Size: <strong className="text-white font-mono">{item.selectedSize}</strong></span>
+                          <span aria-hidden="true">·</span>
+                          <span>Unit: <span className="font-mono text-neutral-300">{item.price.toFixed(2)} {siteSettings.currency}</span></span>
+                        </div>
                       </div>
 
-                      <div className="mt-2 flex items-center gap-3 text-xs text-neutral-400">
-                        <span>Color: <strong className="text-white">{item.selectedColor}</strong></span>
-                        <span aria-hidden="true">·</span>
-                        <span>Size: <strong className="text-white font-mono">{item.selectedSize}</strong></span>
-                        <span aria-hidden="true">·</span>
-                        <span>Unit: <span className="font-mono text-neutral-300">{item.price.toFixed(2)} {siteSettings.currency}</span></span>
+                      <div className="mt-6 flex items-center justify-between pt-3 border-t border-neutral-900">
+                        {/* Quantity Stepper */}
+                        <div className="flex items-center border border-neutral-800 bg-neutral-950">
+                          <button
+                            onClick={() => updateCartQuantity(item.id, item.quantity - 1)}
+                            className="p-1.5 px-3 text-neutral-400 hover:text-white cursor-pointer"
+                          >
+                            <Minus className="w-3.5 h-3.5" />
+                          </button>
+                          <span className="text-xs font-mono font-bold px-3">{item.quantity}</span>
+                          <button
+                            onClick={() => updateCartQuantity(item.id, item.quantity + 1)}
+                            className="p-1.5 px-3 text-neutral-400 hover:text-white cursor-pointer"
+                          >
+                            <Plus className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+
+                        {/* Total for item */}
+                        <div className="text-right">
+                          <span className="text-sm sm:text-base font-bold font-mono text-white">
+                            {(item.price * item.quantity).toFixed(2)} {siteSettings.currency}
+                          </span>
+                        </div>
                       </div>
+
                     </div>
-
-                    <div className="mt-6 flex items-center justify-between pt-3 border-t border-neutral-900">
-                      {/* Quantity Stepper */}
-                      <div className="flex items-center border border-neutral-800 bg-neutral-950">
-                        <button
-                          onClick={() => updateCartQuantity(item.id, item.quantity - 1)}
-                          className="p-1.5 px-3 text-neutral-400 hover:text-white cursor-pointer"
-                        >
-                          <Minus className="w-3.5 h-3.5" />
-                        </button>
-                        <span className="text-xs font-mono font-bold px-3">{item.quantity}</span>
-                        <button
-                          onClick={() => updateCartQuantity(item.id, item.quantity + 1)}
-                          className="p-1.5 px-3 text-neutral-400 hover:text-white cursor-pointer"
-                        >
-                          <Plus className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-
-                      {/* Total for item */}
-                      <div className="text-right">
-                        <span className="text-sm sm:text-base font-bold font-mono text-white">
-                          {(item.price * item.quantity).toFixed(2)} {siteSettings.currency}
-                        </span>
-                      </div>
-                    </div>
-
-                  </div>
-                </div>
-              ))}
+                  </motion.div>
+                ))}
+              </AnimatePresence>
             </div>
           </div>
 

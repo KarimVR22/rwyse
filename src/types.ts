@@ -154,6 +154,17 @@ export interface SiteSettings {
   heroSecondaryCtaText: string;
   heroSecondaryCtaLink: string;
   heroImage: string;
+  spotlightTitle?: string;
+  spotlightSubtitle?: string;
+  spotlightImage1?: string;
+  spotlightImage2?: string;
+  editorialImage?: string;
+  communityImage1?: string;
+  communityImage2?: string;
+  lookbookImage1?: string;
+  lookbookImage2?: string;
+  lookbookImage3?: string;
+  lookbookImage4?: string;
   isNewDropActive: boolean;
   isCommunityActive: boolean;
   isInstagramActive: boolean;

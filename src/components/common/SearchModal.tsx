@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useStore } from '../../context/StoreContext';
 import { Search, X, ArrowRight } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 
 interface SearchModalProps {
   isOpen: boolean;
@@ -27,8 +28,6 @@ export const SearchModal: React.FC<SearchModalProps> = ({
     }
   }, [isOpen]);
 
-  if (!isOpen) return null;
-
   const filtered = query.trim()
     ? products.filter(
         (p) =>
@@ -50,14 +49,26 @@ export const SearchModal: React.FC<SearchModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
-      <div
-        className="fixed inset-0 bg-black/85 backdrop-blur-md transition-opacity"
-        onClick={onClose}
-      />
+    <AnimatePresence>
+      {isOpen && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 bg-black/85 backdrop-blur-md"
+            onClick={onClose}
+          />
 
-      <div className="min-h-full flex items-start justify-center pt-16 sm:pt-24 px-4 sm:px-6">
-        <div className="relative w-full max-w-2xl bg-[#111116] border border-neutral-800 text-neutral-100 shadow-2xl p-6 sm:p-8 z-10">
+          <div className="min-h-full flex items-start justify-center pt-16 sm:pt-24 px-4 sm:px-6">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: -10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: -10 }}
+              transition={{ duration: 0.22, ease: 'easeOut' }}
+              className="relative w-full max-w-2xl bg-[#111116] border border-neutral-800 text-neutral-100 shadow-2xl p-6 sm:p-8 z-10"
+            >
           
           {/* Search Input Bar */}
           <div className="flex items-center gap-3 border-b border-neutral-800 pb-4">
@@ -168,8 +179,10 @@ export const SearchModal: React.FC<SearchModalProps> = ({
             </div>
           )}
 
+            </motion.div>
+          </div>
         </div>
-      </div>
-    </div>
+      )}
+    </AnimatePresence>
   );
 };

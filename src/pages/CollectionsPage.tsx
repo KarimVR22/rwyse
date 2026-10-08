@@ -1,4 +1,5 @@
 import React from 'react';
+import { motion } from 'motion/react';
 import { useStore } from '../context/StoreContext';
 import { ProductCard } from '../components/common/ProductCard';
 import { ArrowRight } from 'lucide-react';
@@ -19,7 +20,12 @@ export const CollectionsPage: React.FC<CollectionsPageProps> = ({
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Header */}
-        <div className="border-b border-neutral-800/80 pb-8 mb-12">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="border-b border-neutral-800/80 pb-8 mb-12"
+        >
           <span className="text-[10px] font-mono uppercase tracking-[0.3em] text-neutral-400 block mb-2">
             CURATED CAPSULES // ARCHIVE
           </span>
@@ -29,7 +35,7 @@ export const CollectionsPage: React.FC<CollectionsPageProps> = ({
           <p className="mt-2 text-xs sm:text-sm text-neutral-400 max-w-xl font-light">
             Each RWYSE capsule is developed as a coherent architectural wardrobe, exploring proportions, drape, and materiality.
           </p>
-        </div>
+        </motion.div>
 
         {/* Collections List */}
         <div className="space-y-24">
@@ -37,13 +43,20 @@ export const CollectionsPage: React.FC<CollectionsPageProps> = ({
             const collectionProducts = products.filter((p) => p.collection === col.name);
 
             return (
-              <div key={col.id} className="space-y-8">
+              <motion.div
+                key={col.id}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: '-50px' }}
+                transition={{ duration: 0.7, delay: index * 0.1 }}
+                className="space-y-8"
+              >
                 {/* Lookbook Hero Card */}
-                <div className="relative aspect-[16/9] sm:aspect-[21/9] w-full overflow-hidden bg-neutral-900 border border-neutral-800">
+                <div className="relative aspect-[16/9] sm:aspect-[21/9] w-full overflow-hidden bg-neutral-900 border border-neutral-800 group">
                   <img
                     src={col.coverImage}
                     alt={col.name}
-                    className="w-full h-full object-cover filter brightness-[0.7] contrast-[1.05]"
+                    className="w-full h-full object-cover filter brightness-[0.7] contrast-[1.05] group-hover:scale-105 transition-transform duration-700"
                     referrerPolicy="no-referrer"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
@@ -78,17 +91,21 @@ export const CollectionsPage: React.FC<CollectionsPageProps> = ({
                     </div>
 
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
-                      {collectionProducts.map((p) => (
-                        <ProductCard
+                      {collectionProducts.map((p, idx) => (
+                        <motion.div
                           key={p.id}
-                          product={p}
-                          onNavigateToProduct={onNavigateToProduct}
-                        />
+                          initial={{ opacity: 0, y: 15 }}
+                          whileInView={{ opacity: 1, y: 0 }}
+                          viewport={{ once: true }}
+                          transition={{ duration: 0.4, delay: idx * 0.08 }}
+                        >
+                          <ProductCard product={p} onNavigateToProduct={onNavigateToProduct} />
+                        </motion.div>
                       ))}
                     </div>
                   </div>
                 )}
-              </div>
+              </motion.div>
             );
           })}
         </div>

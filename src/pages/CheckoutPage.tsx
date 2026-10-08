@@ -58,7 +58,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onNavigate, onOrderP
 
   const total = Math.max(0, subtotal - discountAmount + deliveryFee);
 
-  const handleSubmitOrder = (e: React.FormEvent) => {
+  const handleSubmitOrder = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError(null);
 
@@ -83,7 +83,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onNavigate, onOrderP
           '',
       }));
 
-      const newOrder = createOrder({
+      const newOrder = await createOrder({
         customerName: fullName.trim(),
         customerEmail: email.trim() || 'customer@rwyse.tn',
         customerPhone: phone.trim(),
@@ -100,11 +100,10 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onNavigate, onOrderP
         paymentMethod,
       });
 
-      setTimeout(() => {
-        setIsSubmitting(false);
-        onOrderPlaced(newOrder.id);
-      }, 400);
-    } catch {
+      setIsSubmitting(false);
+      onOrderPlaced(newOrder.id);
+    } catch (err) {
+      console.error('Error during order submission:', err);
       setIsSubmitting(false);
       setFormError('Failed to place order. Please try again.');
     }

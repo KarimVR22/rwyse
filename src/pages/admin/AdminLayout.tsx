@@ -16,6 +16,7 @@ import {
   LogOut,
   CheckCircle,
   ShieldAlert,
+  Image as ImageIcon,
 } from 'lucide-react';
 import { useStore } from '../../context/StoreContext';
 import { RwyseLogo } from '../../components/common/RwyseLogo';
@@ -30,6 +31,7 @@ export type AdminTab =
   | 'promotions'
   | 'advertisements'
   | 'homepage'
+  | 'media'
   | 'delivery'
   | 'analytics'
   | 'audit';
@@ -49,21 +51,28 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
   onLogout,
   children,
 }) => {
-  const { notifications, markNotificationRead, clearNotifications } = useStore();
+  const { orders, notifications, markNotificationRead, clearNotifications } = useStore();
   const [showNotifications, setShowNotifications] = React.useState(false);
 
   const unreadCount = notifications.filter((n) => !n.read).length;
+  const pendingOrdersCount = orders.filter((o) => o.status === 'Pending').length;
 
-  const navItems: { id: AdminTab; label: string; icon: React.ReactNode }[] = [
+  const navItems: { id: AdminTab; label: string; icon: React.ReactNode; badge?: number }[] = [
     { id: 'overview', label: 'Overview', icon: <LayoutDashboard className="w-4 h-4" /> },
     { id: 'products', label: 'Products', icon: <Package className="w-4 h-4" /> },
     { id: 'prices', label: 'Prices & Margins', icon: <BadgeDollarSign className="w-4 h-4" /> },
-    { id: 'orders', label: 'Orders & Tracking', icon: <ShoppingCart className="w-4 h-4" /> },
+    {
+      id: 'orders',
+      label: 'Orders & Tracking',
+      icon: <ShoppingCart className="w-4 h-4" />,
+      badge: pendingOrdersCount > 0 ? pendingOrdersCount : undefined,
+    },
     { id: 'inventory', label: 'Inventory & Stock', icon: <Boxes className="w-4 h-4" /> },
     { id: 'customers', label: 'Customers', icon: <Users className="w-4 h-4" /> },
     { id: 'promotions', label: 'Promotions', icon: <Tag className="w-4 h-4" /> },
     { id: 'advertisements', label: 'Banners & Ads', icon: <Megaphone className="w-4 h-4" /> },
     { id: 'homepage', label: 'Homepage Control', icon: <Sliders className="w-4 h-4" /> },
+    { id: 'media', label: 'Media & Images CMS', icon: <ImageIcon className="w-4 h-4 text-emerald-400" /> },
     { id: 'delivery', label: 'Regional Delivery', icon: <Truck className="w-4 h-4" /> },
     { id: 'analytics', label: 'Analytics', icon: <BarChart3 className="w-4 h-4" /> },
     { id: 'audit', label: 'Security & Audit Logs', icon: <ShieldAlert className="w-4 h-4" /> },
@@ -174,14 +183,25 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
               <button
                 key={item.id}
                 onClick={() => onSelectTab(item.id)}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 text-xs font-medium uppercase tracking-wider rounded-sm transition-colors text-left cursor-pointer ${
+                className={`w-full flex items-center justify-between px-3 py-2.5 text-xs font-medium uppercase tracking-wider rounded-sm transition-colors text-left cursor-pointer ${
                   currentTab === item.id
                     ? 'bg-white text-black font-bold shadow-sm'
                     : 'text-neutral-400 hover:text-white hover:bg-neutral-900'
                 }`}
               >
-                {item.icon}
-                <span>{item.label}</span>
+                <div className="flex items-center gap-3">
+                  {item.icon}
+                  <span>{item.label}</span>
+                </div>
+                {item.badge !== undefined && (
+                  <span
+                    className={`px-1.5 py-0.2 rounded-full font-mono text-[10px] font-bold ${
+                      currentTab === item.id ? 'bg-black text-white' : 'bg-amber-400 text-black'
+                    }`}
+                  >
+                    {item.badge}
+                  </span>
+                )}
               </button>
             ))}
           </div>
@@ -205,13 +225,18 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
               <button
                 key={item.id}
                 onClick={() => onSelectTab(item.id)}
-                className={`px-3 py-1.5 text-xs font-semibold uppercase tracking-wider whitespace-nowrap border cursor-pointer ${
+                className={`px-3 py-1.5 text-xs font-semibold uppercase tracking-wider whitespace-nowrap border cursor-pointer inline-flex items-center gap-1.5 ${
                   currentTab === item.id
                     ? 'bg-white text-black border-white'
                     : 'bg-neutral-900 border-neutral-800 text-neutral-400'
                 }`}
               >
-                {item.label}
+                <span>{item.label}</span>
+                {item.badge !== undefined && (
+                  <span className="px-1.5 py-0.2 rounded-full font-mono text-[9px] font-bold bg-amber-400 text-black">
+                    {item.badge}
+                  </span>
+                )}
               </button>
             ))}
           </div>

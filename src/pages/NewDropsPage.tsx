@@ -1,4 +1,5 @@
 import React from 'react';
+import { motion } from 'motion/react';
 import { useStore } from '../context/StoreContext';
 import { ProductCard } from '../components/common/ProductCard';
 import { editorialImg, hoodieImg } from '../data/initialData';
@@ -39,9 +40,14 @@ export const NewDropsPage: React.FC<NewDropsPageProps> = ({
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Drop Spotlight Hero */}
-        <div className="relative aspect-[16/9] sm:aspect-[21/9] w-full overflow-hidden bg-neutral-900 border border-neutral-800 mb-16">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.98 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.7 }}
+          className="relative aspect-[16/9] sm:aspect-[21/9] w-full overflow-hidden bg-neutral-900 border border-neutral-800 mb-16"
+        >
           <img
-            src={editorialImg}
+            src={siteSettings.editorialImage || editorialImg}
             alt="RWYSE Drop 01: Origin"
             className="w-full h-full object-cover filter brightness-[0.68] contrast-[1.08]"
             referrerPolicy="no-referrer"
@@ -79,45 +85,46 @@ export const NewDropsPage: React.FC<NewDropsPageProps> = ({
               </button>
             </div>
           </div>
-        </div>
+        </motion.div>
 
         {/* Drop Features Highlights */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
-          <div className="p-6 bg-[#111116] border border-neutral-800 space-y-2">
-            <div className="text-[10px] font-mono uppercase tracking-[0.3em] text-neutral-400">
-              SPECIFICATION 01
-            </div>
-            <h3 className="text-sm font-bold uppercase tracking-wider text-white">
-              500 GSM French Terry
-            </h3>
-            <p className="text-xs text-neutral-400 leading-relaxed">
-              Milled in Tunisia from premium combed organic yarns, delivering substantial weight without restricting natural drape.
-            </p>
-          </div>
-
-          <div className="p-6 bg-[#111116] border border-neutral-800 space-y-2">
-            <div className="text-[10px] font-mono uppercase tracking-[0.3em] text-neutral-400">
-              SPECIFICATION 02
-            </div>
-            <h3 className="text-sm font-bold uppercase tracking-wider text-white">
-              Architectural Silhouette
-            </h3>
-            <p className="text-xs text-neutral-400 leading-relaxed">
-              Extended box cuts, lowered armholes, and upright rigid double hoods that hold structure throughout daily wear.
-            </p>
-          </div>
-
-          <div className="p-6 bg-[#111116] border border-neutral-800 space-y-2">
-            <div className="text-[10px] font-mono uppercase tracking-[0.3em] text-neutral-400">
-              SPECIFICATION 03
-            </div>
-            <h3 className="text-sm font-bold uppercase tracking-wider text-white">
-              Limited Batch Production
-            </h3>
-            <p className="text-xs text-neutral-400 leading-relaxed">
-              Strictly capped inventory numbers. Once a size or color sells out, restocks are never guaranteed.
-            </p>
-          </div>
+          {[
+            {
+              num: '01',
+              title: '500 GSM French Terry',
+              desc: 'Milled in Tunisia from premium combed organic yarns, delivering substantial weight without restricting natural drape.',
+            },
+            {
+              num: '02',
+              title: 'Architectural Silhouette',
+              desc: 'Extended box cuts, lowered armholes, and upright rigid double hoods that hold structure throughout daily wear.',
+            },
+            {
+              num: '03',
+              title: 'Limited Batch Production',
+              desc: 'Strictly capped inventory numbers. Once a size or color sells out, restocks are never guaranteed.',
+            },
+          ].map((spec, i) => (
+            <motion.div
+              key={spec.num}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: i * 0.1 }}
+              className="p-6 bg-[#111116] border border-neutral-800 space-y-2"
+            >
+              <div className="text-[10px] font-mono uppercase tracking-[0.3em] text-neutral-400">
+                SPECIFICATION {spec.num}
+              </div>
+              <h3 className="text-sm font-bold uppercase tracking-wider text-white">
+                {spec.title}
+              </h3>
+              <p className="text-xs text-neutral-400 leading-relaxed">
+                {spec.desc}
+              </p>
+            </motion.div>
+          ))}
         </div>
 
         {/* Drop Products Grid */}
@@ -134,12 +141,19 @@ export const NewDropsPage: React.FC<NewDropsPageProps> = ({
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
-            {dropProducts.map((p) => (
-              <ProductCard
+            {dropProducts.map((p, idx) => (
+              <motion.div
                 key={p.id}
-                product={p}
-                onNavigateToProduct={onNavigateToProduct}
-              />
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.4, delay: idx * 0.08 }}
+              >
+                <ProductCard
+                  product={p}
+                  onNavigateToProduct={onNavigateToProduct}
+                />
+              </motion.div>
             ))}
           </div>
         </div>

@@ -4,6 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { StoreProvider, useStore } from './context/StoreContext';
 import { Navbar } from './components/common/Navbar';
 import { AnnouncementBar } from './components/common/AnnouncementBar';
@@ -132,9 +133,11 @@ const AppContent: React.FC = () => {
     }
 
     if (currentPath.startsWith('/order-confirmed')) {
+      const params = new URLSearchParams(currentPath.includes('?') ? currentPath.split('?')[1] : '');
+      const targetId = params.get('id') || confirmedOrderId;
       return (
         <OrderConfirmationPage
-          orderId={confirmedOrderId}
+          orderId={targetId}
           onNavigate={navigate}
         />
       );
@@ -206,7 +209,15 @@ const AppContent: React.FC = () => {
 
       {/* Main Page Content */}
       <main className="flex-1 w-full">
-        {renderPage()}
+        <motion.div
+          key={currentPath.split('?')[0]}
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+          className="w-full"
+        >
+          {renderPage()}
+        </motion.div>
       </main>
 
       {/* Customer Footer (Hidden on Admin) */}

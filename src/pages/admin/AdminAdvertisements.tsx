@@ -235,6 +235,45 @@ export const AdminAdvertisements: React.FC = () => {
                   </select>
                 </div>
 
+                {/* Banner Image Management */}
+                <div className="space-y-2 pt-1">
+                  <div className="flex items-center justify-between">
+                    <label className="text-neutral-400 uppercase tracking-wider block text-xs">Visuel de Bannière</label>
+                    <span className="text-[10px] font-mono text-emerald-400">JPG, PNG, WEBP</span>
+                  </div>
+
+                  <div className="aspect-[16/7] max-h-36 bg-neutral-950 border border-neutral-800 overflow-hidden relative">
+                    <img src={image} alt="Aperçu Bannière" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <label className="py-2 px-3 bg-neutral-900 border border-neutral-700 hover:border-white text-white text-xs font-mono uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-pointer text-center">
+                      <span>Importer fichier</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const reader = new FileReader();
+                            reader.onload = () => setImage(reader.result as string);
+                            reader.readAsDataURL(file);
+                          }
+                        }}
+                      />
+                    </label>
+
+                    <input
+                      type="text"
+                      placeholder="Ou URL https://..."
+                      value={image}
+                      onChange={(e) => setImage(e.target.value)}
+                      className="px-3 py-2 bg-neutral-900 border border-neutral-800 text-white font-mono text-xs"
+                    />
+                  </div>
+                </div>
+
                 <div className="flex items-center gap-2 pt-2">
                   <input
                     type="checkbox"

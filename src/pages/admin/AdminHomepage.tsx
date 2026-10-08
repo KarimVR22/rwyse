@@ -1,7 +1,18 @@
 import React, { useState } from 'react';
 import { useStore } from '../../context/StoreContext';
 import { Sliders, Save, Check } from 'lucide-react';
-import { heroImg, editorialImg, hoodieImg } from '../../data/initialData';
+import {
+  heroImg,
+  editorialImg,
+  hoodieImg,
+  blueHoodieImg,
+  balloonPantImg,
+  ringerTeeImg,
+  modelBlueImg,
+  longsleeveImg,
+  whiteLsImg,
+  tankImg,
+} from '../../data/initialData';
 
 export const AdminHomepage: React.FC = () => {
   const { siteSettings, updateSiteSettings } = useStore();
@@ -40,9 +51,16 @@ export const AdminHomepage: React.FC = () => {
   };
 
   const imageOptions = [
+    { label: 'Royal Blue 567 Editorial Drape', src: modelBlueImg },
+    { label: 'Royal Blue 567 Studio Apex', src: blueHoodieImg },
     { label: 'Brutalist Concrete Campaign', src: heroImg },
     { label: 'Editorial Lookbook Walk', src: editorialImg },
     { label: 'Heavyweight Studio Focus', src: hoodieImg },
+    { label: 'Curved Balloon Sweatpants', src: balloonPantImg },
+    { label: 'Medina Raw Contrast Ringer', src: ringerTeeImg },
+    { label: 'Raw Heavyweight Longsleeve', src: longsleeveImg },
+    { label: 'White Architecture Longsleeve', src: whiteLsImg },
+    { label: 'Athletic Compression Tank', src: tankImg },
   ];
 
   return (
@@ -177,12 +195,71 @@ export const AdminHomepage: React.FC = () => {
               </div>
             </div>
 
-            {/* Hero Image Selection */}
-            <div>
-              <label className="text-neutral-400 uppercase tracking-wider block mb-2">
-                Active Hero Backdrop Photo
-              </label>
-              <div className="grid grid-cols-3 gap-3">
+            {/* Hero Image Selection & Direct File Upload */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <label className="text-neutral-400 uppercase tracking-wider block text-xs">
+                  Active Hero Backdrop Photo
+                </label>
+                <span className="text-[10px] font-mono text-emerald-400">JPG, PNG, WEBP</span>
+              </div>
+
+              {/* Live Preview */}
+              <div className="aspect-[16/9] max-h-48 bg-neutral-950 border border-neutral-800 overflow-hidden relative">
+                <img
+                  src={heroImage}
+                  alt="Aperçu Hero"
+                  className="w-full h-full object-cover"
+                  referrerPolicy="no-referrer"
+                />
+                <span className="absolute bottom-2 left-2 px-2 py-0.5 bg-black/80 border border-white/20 text-[10px] font-mono text-white">
+                  Aperçu en Direct
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[11px] text-neutral-400 uppercase tracking-wider block mb-1">
+                    Téléverser depuis votre ordinateur
+                  </label>
+                  <label className="w-full py-2 px-3 bg-neutral-900 border border-neutral-700 hover:border-white text-white text-xs font-mono uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer transition-colors">
+                    <span>Choisir un fichier</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          const reader = new FileReader();
+                          reader.onload = () => {
+                            setHeroImage(reader.result as string);
+                          };
+                          reader.readAsDataURL(file);
+                        }
+                      }}
+                    />
+                  </label>
+                </div>
+
+                <div>
+                  <label className="text-[11px] text-neutral-400 uppercase tracking-wider block mb-1">
+                    Ou coller l'URL de l'image
+                  </label>
+                  <input
+                    type="text"
+                    value={heroImage}
+                    onChange={(e) => setHeroImage(e.target.value)}
+                    placeholder="https://..."
+                    className="w-full px-3 py-2 bg-neutral-900 border border-neutral-800 text-white font-mono text-xs focus:outline-none focus:border-neutral-500"
+                  />
+                </div>
+              </div>
+
+              <span className="text-[10px] font-mono uppercase text-neutral-500 block pt-1">
+                Ou sélectionner parmi les photos de campagne :
+              </span>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5">
                 {imageOptions.map((opt) => (
                   <div
                     key={opt.label}

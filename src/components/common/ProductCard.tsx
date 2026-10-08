@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Product } from '../../types';
 import { useStore } from '../../context/StoreContext';
 import { Bookmark, Eye, Plus, Check } from 'lucide-react';
+import { motion } from 'motion/react';
 
 interface ProductCardProps {
   product: Product;
@@ -46,7 +47,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onNavigateToP
   };
 
   return (
-    <div
+    <motion.div
+      whileHover={{ y: -5 }}
+      transition={{ duration: 0.25, ease: 'easeOut' }}
       className="group relative flex flex-col cursor-pointer transition-all duration-300"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
@@ -204,6 +207,6 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onNavigateToP
         </div>
 
       </div>
-    </div>
+    </motion.div>
   );
 };

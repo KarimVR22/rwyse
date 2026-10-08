@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { useStore } from '../context/StoreContext';
 import { ProductCard } from '../components/common/ProductCard';
 import { Product360Viewer } from '../components/common/Product360Viewer';
@@ -175,12 +176,19 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
             ) : (
               <>
                 <div className="relative aspect-[3/4] w-full overflow-hidden bg-[#141418] border border-white/[0.06]">
-                  <img
-                    src={currentImage}
-                    alt={product.name}
-                    className="w-full h-full object-cover object-center transition-all duration-300"
-                    referrerPolicy="no-referrer"
-                  />
+                  <AnimatePresence mode="wait">
+                    <motion.img
+                      key={currentImage}
+                      src={currentImage}
+                      alt={product.name}
+                      initial={{ opacity: 0.6, scale: 1.02 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0.6 }}
+                      transition={{ duration: 0.28, ease: 'easeOut' }}
+                      className="w-full h-full object-cover object-center"
+                      referrerPolicy="no-referrer"
+                    />
+                  </AnimatePresence>
 
                   {/* Status Indicator */}
                   <div className="absolute top-4 left-4 z-10">

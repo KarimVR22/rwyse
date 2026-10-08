@@ -19,10 +19,9 @@ service cloud.firestore {
       allow write: if true;
     }
 
-    // Orders: anyone can create an order; reading and updating orders
+    // Orders: anyone can create an order; reading, updating, and managing orders
     match /orders/{orderId} {
-      allow create: if true;
-      allow read, update: if true;
+      allow read, write: if true;
     }
 
     // Advertisements: readable by everyone

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useStore } from '../../context/StoreContext';
 import { X, Plus, Minus, Trash2, ArrowRight, Tag, CheckCircle2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 
 interface CartDrawerProps {
   onNavigate: (path: string) => void;
@@ -21,8 +22,6 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ onNavigate }) => {
 
   const [promoInput, setPromoInput] = useState('');
   const [promoError, setPromoError] = useState<string | null>(null);
-
-  if (!isCartOpen) return null;
 
   const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
   
@@ -59,15 +58,27 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ onNavigate }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden">
-      {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/70 backdrop-blur-sm transition-opacity"
-        onClick={() => setIsCartOpen(false)}
-      />
+    <AnimatePresence>
+      {isCartOpen && (
+        <div className="fixed inset-0 z-50 overflow-hidden">
+          {/* Backdrop */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            className="absolute inset-0 bg-black/75 backdrop-blur-sm"
+            onClick={() => setIsCartOpen(false)}
+          />
 
-      <div className="fixed inset-y-0 right-0 max-w-full flex pl-10">
-        <div className="w-screen max-w-md bg-[#0e0e11] border-l border-neutral-800 text-neutral-100 flex flex-col shadow-2xl">
+          <div className="fixed inset-y-0 right-0 max-w-full flex pl-10">
+            <motion.div
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ type: 'spring', damping: 28, stiffness: 280 }}
+              className="w-screen max-w-md bg-[#0e0e11] border-l border-neutral-800 text-neutral-100 flex flex-col shadow-2xl"
+            >
           
           {/* Header */}
           <div className="p-6 border-b border-neutral-800 flex items-center justify-between">
@@ -268,8 +279,10 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ onNavigate }) => {
             </div>
           )}
 
+            </motion.div>
+          </div>
         </div>
-      </div>
-    </div>
+      )}
+    </AnimatePresence>
   );
 };

@@ -20,7 +20,18 @@ import {
   initialOrders,
   initialSiteSettings,
 } from '../data/initialData';
-import { db, doc, setDoc, deleteDoc } from '../firebase';
+import {
+  db,
+  doc,
+  setDoc,
+  deleteDoc,
+  updateDoc,
+  getDocs,
+  collection,
+  onSnapshot,
+  handleFirestoreError,
+  OperationType,
+} from '../firebase';
 
 interface StoreContextType {
   products: Product[];
@@ -39,6 +50,8 @@ interface StoreContextType {
   quickViewProduct: Product | null;
   isSizeGuideOpen: boolean;
   toast: string | null;
+  isCloudSynced: boolean;
+  isRefreshingOrders: boolean;
 
   // Storefront actions
   addToCart: (product: Product, color: string, size: string, quantity?: number) => void;
@@ -49,7 +62,9 @@ interface StoreContextType {
   isInWishlist: (productId: string) => boolean;
   applyPromo: (code: string) => { success: boolean; message: string };
   removePromo: () => void;
-  createOrder: (orderData: Omit<Order, 'id' | 'orderNumber' | 'createdAt' | 'status' | 'trackingSteps'>) => Order;
+  createOrder: (orderData: Omit<Order, 'id' | 'orderNumber' | 'createdAt' | 'status' | 'trackingSteps'>) => Promise<Order>;
+  deleteOrder: (orderId: string) => Promise<void>;
+  refreshOrdersFromCloud: () => Promise<void>;
   trackOrderByNumber: (query: string) => Order | undefined;
   setIsCartOpen: (open: boolean) => void;
   setQuickViewProduct: (product: Product | null) => void;
@@ -62,7 +77,7 @@ interface StoreContextType {
   deleteProduct: (id: string) => void;
   duplicateProduct: (id: string) => Product | undefined;
   updateProductPrice: (id: string, price: number, salePrice?: number) => void;
-  updateOrderStatus: (orderId: string, status: Order['status']) => void;
+  updateOrderStatus: (orderId: string, status: Order['status']) => Promise<void>;
   updateDeliveryZone: (zone: DeliveryZone) => void;
   addPromotion: (promo: Omit<Promotion, 'id' | 'currentUses'>) => void;
   updatePromotion: (promo: Promotion) => void;
@@ -105,6 +120,9 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const saved = localStorage.getItem('rwyse_orders_v6');
     return saved ? JSON.parse(saved) : initialOrders;
   });
+
+  const [isCloudSynced, setIsCloudSynced] = useState<boolean>(false);
+  const [isRefreshingOrders, setIsRefreshingOrders] = useState<boolean>(false);
 
   const [promotions, setPromotions] = useState<Promotion[]>(() => {
     const saved = localStorage.getItem('rwyse_promotions_v6');
@@ -208,6 +226,51 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     localStorage.setItem('rwyse_orders_v6', JSON.stringify(orders));
   }, [orders]);
 
+  // Real-time Firestore sync for Orders
+  useEffect(() => {
+    const ordersCol = collection(db, 'orders');
+    const unsubscribe = onSnapshot(
+      ordersCol,
+      (snapshot) => {
+        if (!snapshot.empty) {
+          const loaded: Order[] = [];
+          snapshot.forEach((docSnap) => {
+            const data = docSnap.data() as Order;
+            if (data) {
+              loaded.push({
+                ...data,
+                id: data.id || docSnap.id,
+              });
+            }
+          });
+          // Sort by creation date descending
+          loaded.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+          setOrders(loaded);
+          setIsCloudSynced(true);
+        } else {
+          // If Firestore is completely empty, populate with initialOrders so database is seeded
+          const seedInitial = async () => {
+            try {
+              for (const ord of initialOrders) {
+                await setDoc(doc(db, 'orders', ord.id), ord);
+              }
+              setIsCloudSynced(true);
+            } catch (err) {
+              handleFirestoreError(err, OperationType.WRITE, 'orders');
+            }
+          };
+          seedInitial();
+        }
+      },
+      (error) => {
+        handleFirestoreError(error, OperationType.GET, 'orders');
+        setIsCloudSynced(false);
+      }
+    );
+
+    return () => unsubscribe();
+  }, []);
+
   useEffect(() => {
     localStorage.setItem('rwyse_promotions_v6', JSON.stringify(promotions));
   }, [promotions]);
@@ -223,6 +286,27 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   useEffect(() => {
     localStorage.setItem('rwyse_settings_v6', JSON.stringify(siteSettings));
   }, [siteSettings]);
+
+  // Real-time Firestore sync for Site Settings (Hero, Spotlights, Lookbook & CMS Images)
+  useEffect(() => {
+    const settingsDoc = doc(db, 'settings', 'global');
+    const unsubscribe = onSnapshot(
+      settingsDoc,
+      (docSnap) => {
+        if (docSnap.exists()) {
+          const remoteSettings = docSnap.data() as Partial<SiteSettings>;
+          if (remoteSettings && Object.keys(remoteSettings).length > 0) {
+            setSiteSettings((prev) => ({ ...prev, ...remoteSettings }));
+          }
+        }
+      },
+      (error) => {
+        console.warn('Real-time settings listener note:', error);
+      }
+    );
+
+    return () => unsubscribe();
+  }, []);
 
   useEffect(() => {
     localStorage.setItem('rwyse_notifications', JSON.stringify(notifications));
@@ -333,9 +417,9 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   // Create Order
-  const createOrder = (
+  const createOrder = async (
     orderData: Omit<Order, 'id' | 'orderNumber' | 'createdAt' | 'status' | 'trackingSteps'>
-  ): Order => {
+  ): Promise<Order> => {
     const randomNum = Math.floor(10000 + Math.random() * 90000);
     const orderNumber = `RWY-${randomNum}`;
     const now = new Date().toISOString();
@@ -386,17 +470,21 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       ],
     };
 
-    setOrders((prev) => [newOrder, ...prev]);
+    // Immediate local update so user UI is updated immediately
+    setOrders((prev) => [newOrder, ...prev.filter((o) => o.id !== newOrder.id)]);
 
-    // Firestore async sync
+    // Firestore persistent sync
     try {
-      setDoc(doc(db, 'orders', newOrder.id), newOrder).catch(() => {});
-    } catch {}
+      await setDoc(doc(db, 'orders', newOrder.id), newOrder);
+      console.log('Order successfully persisted to Firestore:', newOrder.id, newOrder.orderNumber);
+    } catch (err) {
+      handleFirestoreError(err, OperationType.CREATE, `orders/${newOrder.id}`);
+    }
 
     logAuditAction(
       'Nouvelle Commande',
       `Commande ${orderNumber} enregistrée pour ${orderData.customerName} (${orderData.total} ${siteSettings.currency}) via Cash on Delivery`,
-      'client@rwyse.tn'
+      orderData.customerEmail || 'client@rwyse.tn'
     );
 
     // Deduct stock
@@ -434,10 +522,10 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     // Push Admin Notification
     const newNotif: AdminNotification = {
       id: `notif-${Date.now()}`,
-      title: 'New Order Received',
-      message: `Order ${orderNumber} placed by ${orderData.customerName} for ${orderData.total} ${siteSettings.currency} (${orderData.region})`,
+      title: 'Nouvelle Commande Reçue !',
+      message: `Commande ${orderNumber} passée par ${orderData.customerName} pour ${orderData.total} ${siteSettings.currency} (${orderData.region})`,
       type: 'order',
-      timestamp: 'Just now',
+      timestamp: 'À l\'instant',
       read: false,
       orderId: newOrder.id,
     };
@@ -526,20 +614,21 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   // Admin Order Actions
-  const updateOrderStatus = (orderId: string, newStatus: Order['status']) => {
+  const updateOrderStatus = async (orderId: string, newStatus: Order['status']) => {
+    const statusSequence: Order['status'][] = [
+      'Pending',
+      'Confirmed',
+      'Preparing',
+      'Shipped',
+      'Delivered',
+    ];
+
+    const targetIndex = statusSequence.indexOf(newStatus);
+    let updatedOrderObj: Order | undefined;
+
     setOrders((prev) =>
       prev.map((order) => {
         if (order.id !== orderId) return order;
-
-        const statusSequence: Order['status'][] = [
-          'Pending',
-          'Confirmed',
-          'Preparing',
-          'Shipped',
-          'Delivered',
-        ];
-
-        const targetIndex = statusSequence.indexOf(newStatus);
 
         const updatedSteps = order.trackingSteps.map((step) => {
           if (newStatus === 'Cancelled') {
@@ -556,25 +645,83 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           };
         });
 
-        return {
+        const updated = {
           ...order,
           status: newStatus,
           trackingSteps: updatedSteps,
         };
+        updatedOrderObj = updated;
+        return updated;
       })
     );
 
+    // Sync status change directly to Firestore
+    try {
+      if (updatedOrderObj) {
+        await updateDoc(doc(db, 'orders', orderId), {
+          status: newStatus,
+          trackingSteps: updatedOrderObj.trackingSteps,
+        });
+      }
+    } catch (err) {
+      if (updatedOrderObj) {
+        try {
+          await setDoc(doc(db, 'orders', orderId), updatedOrderObj);
+        } catch (innerErr) {
+          handleFirestoreError(innerErr, OperationType.UPDATE, `orders/${orderId}`);
+        }
+      }
+    }
+
     const notif: AdminNotification = {
       id: `notif-${Date.now()}`,
-      title: 'Order Status Changed',
-      message: `Order status for ${orderId} updated to "${newStatus}".`,
+      title: 'Statut de Commande Mis à Jour',
+      message: `La commande ${orderId} est maintenant "${newStatus}".`,
       type: newStatus === 'Cancelled' ? 'cancel' : 'order',
-      timestamp: 'Just now',
+      timestamp: 'À l\'instant',
       read: false,
       orderId,
     };
     setNotifications((prev) => [notif, ...prev]);
-    showToast(`Order status updated to "${newStatus}".`);
+    showToast(`Statut mis à jour : "${newStatus}".`);
+  };
+
+  const deleteOrder = async (orderId: string) => {
+    setOrders((prev) => prev.filter((o) => o.id !== orderId));
+    try {
+      await deleteDoc(doc(db, 'orders', orderId));
+      showToast('Commande supprimée du cloud Firestore.');
+    } catch (err) {
+      handleFirestoreError(err, OperationType.DELETE, `orders/${orderId}`);
+      showToast('Erreur lors de la suppression de la commande.');
+    }
+  };
+
+  const refreshOrdersFromCloud = async () => {
+    setIsRefreshingOrders(true);
+    try {
+      const snap = await getDocs(collection(db, 'orders'));
+      const loaded: Order[] = [];
+      snap.forEach((docSnap) => {
+        const data = docSnap.data() as Order;
+        if (data) {
+          loaded.push({
+            ...data,
+            id: data.id || docSnap.id,
+          });
+        }
+      });
+      loaded.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      setOrders(loaded);
+      localStorage.setItem('rwyse_orders_v6', JSON.stringify(loaded));
+      setIsCloudSynced(true);
+      showToast(`Synchronisation réussie (${loaded.length} commandes récupérées depuis le Cloud).`);
+    } catch (err) {
+      handleFirestoreError(err, OperationType.GET, 'orders');
+      showToast('Erreur lors de la synchronisation Firestore.');
+    } finally {
+      setIsRefreshingOrders(false);
+    }
   };
 
   // Delivery Zones
@@ -631,9 +778,16 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   // Site Settings
-  const updateSiteSettings = (settings: Partial<SiteSettings>) => {
-    setSiteSettings((prev) => ({ ...prev, ...settings }));
-    showToast('Store settings saved.');
+  const updateSiteSettings = async (settings: Partial<SiteSettings>) => {
+    const updated = { ...siteSettings, ...settings };
+    setSiteSettings(updated);
+    localStorage.setItem('rwyse_settings_v6', JSON.stringify(updated));
+    showToast('Paramètres et images enregistrés !');
+    try {
+      await setDoc(doc(db, 'settings', 'global'), updated);
+    } catch (err) {
+      console.warn('Could not save settings to Firestore:', err);
+    }
   };
 
   // Notifications
@@ -699,6 +853,10 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         clearNotifications,
         auditLogs,
         logAuditAction,
+        deleteOrder,
+        refreshOrdersFromCloud,
+        isCloudSynced,
+        isRefreshingOrders,
       }}
     >
       {children}

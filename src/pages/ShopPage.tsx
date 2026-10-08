@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { useStore } from '../context/StoreContext';
 import { ProductCard } from '../components/common/ProductCard';
 import { ProductCategory } from '../types';
@@ -314,15 +315,28 @@ export const ShopPage: React.FC<ShopPageProps> = ({ onNavigateToProduct }) => {
             </button>
           </div>
         ) : (
-          <div className={filteredProducts.length === 1 ? 'max-w-md mx-auto md:mx-0' : 'grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8'}>
-            {filteredProducts.map((product) => (
-              <ProductCard
-                key={product.id}
-                product={product}
-                onNavigateToProduct={onNavigateToProduct}
-              />
-            ))}
-          </div>
+          <motion.div
+            layout
+            className={filteredProducts.length === 1 ? 'max-w-md mx-auto md:mx-0' : 'grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8'}
+          >
+            <AnimatePresence mode="popLayout">
+              {filteredProducts.map((product, idx) => (
+                <motion.div
+                  key={product.id}
+                  layout
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ duration: 0.35, delay: Math.min(idx * 0.04, 0.3) }}
+                >
+                  <ProductCard
+                    product={product}
+                    onNavigateToProduct={onNavigateToProduct}
+                  />
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </motion.div>
         )}
 
       </div>

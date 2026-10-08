@@ -9,6 +9,7 @@ import { AdminCustomers } from './AdminCustomers';
 import { AdminPromotions } from './AdminPromotions';
 import { AdminAdvertisements } from './AdminAdvertisements';
 import { AdminHomepage } from './AdminHomepage';
+import { AdminMediaManager } from './AdminMediaManager';
 import { AdminDelivery } from './AdminDelivery';
 import { AdminAnalytics } from './AdminAnalytics';
 import { AdminAuditLogs } from './AdminAuditLogs';
@@ -280,6 +281,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExitAdmin }) =
       {currentTab === 'promotions' && <AdminPromotions />}
       {currentTab === 'advertisements' && <AdminAdvertisements />}
       {currentTab === 'homepage' && <AdminHomepage />}
+      {currentTab === 'media' && <AdminMediaManager />}
       {currentTab === 'delivery' && <AdminDelivery />}
       {currentTab === 'analytics' && <AdminAnalytics />}
       {currentTab === 'audit' && <AdminAuditLogs />}

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { motion } from 'motion/react';
 import { ArrowRight, Instagram, Users, Sparkles, MapPin, Calendar, Check } from 'lucide-react';
 import { RwyseLogo } from '../components/common/RwyseLogo';
 
@@ -53,7 +54,12 @@ export const CommunityPage: React.FC<CommunityPageProps> = ({ onNavigate, onNavi
     <div className="min-h-screen bg-[#070709] text-white pt-24 pb-24 antialiased">
       {/* Hero Statement */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-20">
-        <div className="border-b border-neutral-800 pb-12">
+        <motion.div
+          initial={{ opacity: 0, y: 25 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="border-b border-neutral-800 pb-12"
+        >
           <div className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-[0.3em] text-neutral-400 mb-3">
             <Users className="w-3.5 h-3.5 text-blue-500" />
             <span>COMMUNITY // COLLECTIVE DISCIPLINE</span>
@@ -64,7 +70,7 @@ export const CommunityPage: React.FC<CommunityPageProps> = ({ onNavigate, onNavi
           <p className="max-w-2xl text-neutral-400 text-sm sm:text-base font-light leading-relaxed">
             RWYSE n'est pas simplement un label vestimentaire. C'est un mouvement contemporain qui réunit créateurs, athlètes et esprits audacieux autour de coupes architecturales radicales et d'une rigueur absolue.
           </p>
-        </div>
+        </motion.div>
 
         {/* Community Pillars */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 py-12 border-b border-neutral-800">
