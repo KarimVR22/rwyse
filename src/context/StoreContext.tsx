@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import {
   Product,
   Collection,
@@ -32,7 +32,7 @@ import {
   handleFirestoreError,
   OperationType,
 } from '../firebase';
-import { compressImageIfNeeded } from '../utils/imageCompressor';
+import { compressImageIfNeeded, sanitizeForFirestore } from '../utils/imageCompressor';
 
 interface StoreContextType {
   products: Product[];
@@ -98,6 +98,8 @@ interface StoreContextType {
   clearNotifications: () => void;
   logAuditAction: (action: string, details: string, adminEmail?: string) => void;
   syncAllProductsToCloud: () => Promise<void>;
+  importProducts: (newProducts: Omit<Product, 'id' | 'createdAt'>[]) => Promise<Product[]>;
+  clearAllDemoOrders: () => Promise<void>;
 }
 
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
@@ -165,26 +167,17 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const saved = localStorage.getItem('rwyse_orders_v6');
       let currentOrders: Order[] = saved ? JSON.parse(saved) : [];
 
-      // Guarantee initialOrders (e.g. ord-101 and ord-102 for Sarra Mansour) are present if not explicitly deleted
-      const currentIds = new Set(currentOrders.map((o) => o.id));
-      for (const initOrd of initialOrders) {
-        const phoneKey = (initOrd.customerPhone || '').replace(/\s+/g, '').toLowerCase();
-        const emailKey = (initOrd.customerEmail || '').trim().toLowerCase();
-        if (!currentIds.has(initOrd.id) && !deletedSet.has(initOrd.id) && !deletedCustSet.has(phoneKey) && !deletedCustSet.has(emailKey)) {
-          currentOrders.push(initOrd);
-        }
-      }
-
       // Filter out any explicitly deleted orders or customers
       return currentOrders.filter((o) => {
         if (deletedSet.has(o.id)) return false;
         const phoneKey = (o.customerPhone || '').replace(/\s+/g, '').toLowerCase();
         const emailKey = (o.customerEmail || '').trim().toLowerCase();
-        if (deletedCustSet.has(phoneKey) || deletedCustSet.has(emailKey)) return false;
+        const nameKey = (o.customerName || '').trim().toLowerCase();
+        if (deletedCustSet.has(phoneKey) || deletedCustSet.has(emailKey) || deletedCustSet.has(nameKey)) return false;
         return true;
       });
     } catch {
-      return initialOrders;
+      return [];
     }
   });
 
@@ -214,26 +207,12 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   });
 
   const [notifications, setNotifications] = useState<AdminNotification[]>(() => {
-    const saved = localStorage.getItem('rwyse_notifications');
-    return saved ? JSON.parse(saved) : [
-      {
-        id: 'notif-1',
-        title: 'New Order Received',
-        message: 'Order RWY-84921 placed by Sarra Mansour for 172 TND (COD)',
-        type: 'order',
-        timestamp: '10 mins ago',
-        read: false,
-        orderId: 'ord-102',
-      },
-      {
-        id: 'notif-2',
-        title: 'Low Stock Alert',
-        message: 'RWYSE Club French Terry Sweatpant (Size L) has only 1 unit remaining.',
-        type: 'stock',
-        timestamp: '1 hour ago',
-        read: false,
-      }
-    ];
+    try {
+      const saved = localStorage.getItem('rwyse_notifications');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
   });
 
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>(() => {
@@ -293,7 +272,30 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     localStorage.setItem('rwyse_orders_v6', JSON.stringify(orders));
   }, [orders]);
 
-  // Real-time Firestore sync for Orders
+  // Audio notification chime using Web Audio API (cross-browser, zero external files)
+  const playOrderChime = () => {
+    try {
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioCtx) return;
+      const audioCtx = new AudioCtx();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(587.33, audioCtx.currentTime); // D5
+      osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.15); // A5
+      gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+      osc.start(audioCtx.currentTime);
+      osc.stop(audioCtx.currentTime + 0.4);
+    } catch {}
+  };
+
+  const isInitialOrdersSnapshot = useRef(true);
+  const knownOrderIds = useRef<Set<string>>(new Set());
+
+  // Real-time Firestore sync for Orders (Receives orders from ALL external devices instantly)
   useEffect(() => {
     const ordersCol = collection(db, 'orders');
     const unsubscribe = onSnapshot(
@@ -305,53 +307,60 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         const deletedCustList: string[] = savedDeletedCust ? JSON.parse(savedDeletedCust) : [];
         const deletedCustSet = new Set(deletedCustList.map((k) => k.replace(/\s+/g, '').toLowerCase()));
 
+        const loaded: Order[] = [];
+        const newlyArrivedOrders: Order[] = [];
+
         if (!snapshot.empty) {
-          const loaded: Order[] = [];
           snapshot.forEach((docSnap) => {
             const data = docSnap.data() as Order;
-            if (data) {
+            if (data && data.orderNumber) {
               const ordId = data.id || docSnap.id;
               const phoneKey = (data.customerPhone || '').replace(/\s+/g, '').toLowerCase();
               const emailKey = (data.customerEmail || '').trim().toLowerCase();
-              if (!deletedSet.has(ordId) && !deletedCustSet.has(phoneKey) && !deletedCustSet.has(emailKey)) {
-                loaded.push({
+              const nameKey = (data.customerName || '').trim().toLowerCase();
+              if (!deletedSet.has(ordId) && !deletedCustSet.has(phoneKey) && !deletedCustSet.has(emailKey) && !deletedCustSet.has(nameKey)) {
+                const completeOrder: Order = {
                   ...data,
                   id: ordId,
-                });
+                };
+                loaded.push(completeOrder);
+
+                if (!isInitialOrdersSnapshot.current && !knownOrderIds.current.has(ordId)) {
+                  newlyArrivedOrders.push(completeOrder);
+                }
               }
             }
           });
-          // Also ensure initialOrders that aren't deleted are present
-          const loadedIds = new Set(loaded.map((o) => o.id));
-          for (const initOrd of initialOrders) {
-            const phoneKey = (initOrd.customerPhone || '').replace(/\s+/g, '').toLowerCase();
-            const emailKey = (initOrd.customerEmail || '').trim().toLowerCase();
-            if (!loadedIds.has(initOrd.id) && !deletedSet.has(initOrd.id) && !deletedCustSet.has(phoneKey) && !deletedCustSet.has(emailKey)) {
-              loaded.push(initOrd);
-            }
-          }
 
           // Sort by creation date descending
           loaded.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-          setOrders(loaded);
-          localStorage.setItem('rwyse_orders_v6', JSON.stringify(loaded));
-          setIsCloudSynced(true);
-        } else {
-          // If Firestore is completely empty, populate with initialOrders so database is seeded
-          const seedInitial = async () => {
-            try {
-              for (const ord of initialOrders) {
-                if (!deletedSet.has(ord.id)) {
-                  await setDoc(doc(db, 'orders', ord.id), ord);
-                }
-              }
-              setIsCloudSynced(true);
-            } catch (err) {
-              handleFirestoreError(err, OperationType.WRITE, 'orders');
-            }
-          };
-          seedInitial();
         }
+
+        // Update known IDs set
+        loaded.forEach((o) => knownOrderIds.current.add(o.id));
+
+        // If new real orders arrived from external devices, ring chime and notify admin!
+        if (!isInitialOrdersSnapshot.current && newlyArrivedOrders.length > 0) {
+          playOrderChime();
+          newlyArrivedOrders.forEach((newOrd) => {
+            const notif: AdminNotification = {
+              id: `notif-${Date.now()}-${Math.random().toString().slice(2, 6)}`,
+              title: '🔥 Nouvelle Commande Client Réelle !',
+              message: `Commande #${newOrd.orderNumber} reçue de ${newOrd.customerName} (${newOrd.total} ${siteSettings.currency}) - ${newOrd.region}`,
+              type: 'order',
+              timestamp: 'À l\'instant',
+              read: false,
+              orderId: newOrd.id,
+            };
+            setNotifications((prev) => [notif, ...prev]);
+            showToast(`🔥 NOUVELLE COMMANDE REÇUE : #${newOrd.orderNumber} (${newOrd.customerName})`);
+          });
+        }
+
+        isInitialOrdersSnapshot.current = false;
+        setOrders(loaded);
+        localStorage.setItem('rwyse_orders_v6', JSON.stringify(loaded));
+        setIsCloudSynced(true);
       },
       (error) => {
         handleFirestoreError(error, OperationType.GET, 'orders');
@@ -360,7 +369,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     );
 
     return () => unsubscribe();
-  }, []);
+  }, [siteSettings.currency]);
 
   useEffect(() => {
     localStorage.setItem('rwyse_promotions_v6', JSON.stringify(promotions));
@@ -378,7 +387,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     localStorage.setItem('rwyse_settings_v6', JSON.stringify(siteSettings));
   }, [siteSettings]);
 
-  // Real-time Firestore sync for Products (Instant live synchronization with all clients)
+  // Real-time Firestore sync for Products (Instant live synchronization across ALL clients)
   useEffect(() => {
     const productsCol = collection(db, 'products');
     const unsubscribe = onSnapshot(
@@ -415,7 +424,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
               const toSeed: Product[] = saved ? JSON.parse(saved) : initialProducts;
               for (const p of toSeed) {
                 if (!deletedSet.has(p.id)) {
-                  await setDoc(doc(db, 'products', p.id), p);
+                  const cleanP = sanitizeForFirestore(p);
+                  await setDoc(doc(db, 'products', p.id), cleanP);
                 }
               }
               setIsCloudSynced(true);
@@ -710,9 +720,11 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     // Firestore persistent sync
     try {
-      await setDoc(doc(db, 'orders', newOrder.id), newOrder);
-      console.log('Order successfully persisted to Firestore:', newOrder.id, newOrder.orderNumber);
+      const cleanOrder = sanitizeForFirestore(newOrder);
+      await setDoc(doc(db, 'orders', cleanOrder.id), cleanOrder);
+      console.log('Order successfully persisted to Firestore:', cleanOrder.id, cleanOrder.orderNumber);
     } catch (err) {
+      console.error('Firestore createOrder error:', err);
       handleFirestoreError(err, OperationType.CREATE, `orders/${newOrder.id}`);
     }
 
@@ -753,18 +765,6 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         )
       );
     }
-
-    // Push Admin Notification
-    const newNotif: AdminNotification = {
-      id: `notif-${Date.now()}`,
-      title: 'Nouvelle Commande Reçue !',
-      message: `Commande ${orderNumber} passée par ${orderData.customerName} pour ${orderData.total} ${siteSettings.currency} (${orderData.region})`,
-      type: 'order',
-      timestamp: 'À l\'instant',
-      read: false,
-      orderId: newOrder.id,
-    };
-    setNotifications((prev) => [newNotif, ...prev]);
 
     clearCart();
     setAppliedPromo(null);
@@ -809,10 +809,10 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             };
           })
         );
-        const toSave: Product = {
+        const toSave: Product = sanitizeForFirestore({
           ...newProduct,
           colors: sanitizedColors,
-        };
+        });
         await setDoc(doc(db, 'products', toSave.id), toSave);
         console.log('Product persisted to Firestore:', toSave.id);
       } catch (err) {
@@ -842,11 +842,11 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           };
         })
       );
-      const toSave: Product = {
+      const toSave: Product = sanitizeForFirestore({
         ...updated,
         colors: sanitizedColors,
-      };
-      await setDoc(doc(db, 'products', toSave.id), toSave, { merge: true });
+      });
+      await setDoc(doc(db, 'products', toSave.id), toSave);
       console.log('Product update persisted to Firestore:', toSave.id);
     } catch (err) {
       console.error('Firestore updateProduct error:', err);
@@ -971,17 +971,59 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             };
           })
         );
-        const toSave: Product = {
+        const toSave: Product = sanitizeForFirestore({
           ...prod,
           colors: sanitizedColors,
-        };
-        await setDoc(doc(db, 'products', toSave.id), toSave, { merge: true });
+        });
+        await setDoc(doc(db, 'products', toSave.id), toSave);
       }
       setIsCloudSynced(true);
       showToast(`Catalogue entier (${products.length} articles) synchronisé avec succès sur le Cloud Firestore !`);
     } catch (err) {
       handleFirestoreError(err, OperationType.WRITE, 'products');
       showToast('Erreur de synchronisation Cloud.');
+    } finally {
+      setIsSyncingCatalog(false);
+    }
+  };
+
+  // Bulk import products and publish directly to Firestore
+  const importProducts = async (newItems: Omit<Product, 'id' | 'createdAt'>[]): Promise<Product[]> => {
+    setIsSyncingCatalog(true);
+    const createdList: Product[] = [];
+    try {
+      for (const item of newItems) {
+        const newId = `rwy-${Date.now().toString().slice(-4)}-${Math.floor(Math.random() * 900 + 100)}`;
+        const sanitizedColors = await Promise.all(
+          (item.colors || []).map(async (c) => {
+            const compressedImages = await Promise.all(
+              (c.images || []).map((img) => compressImageIfNeeded(img))
+            );
+            return {
+              ...c,
+              images: compressedImages,
+            };
+          })
+        );
+        const newProd: Product = sanitizeForFirestore({
+          ...item,
+          id: newId,
+          colors: sanitizedColors,
+          createdAt: new Date().toISOString(),
+        });
+        createdList.push(newProd);
+        await setDoc(doc(db, 'products', newProd.id), newProd);
+      }
+
+      setProducts((prev) => [...createdList, ...prev]);
+      logAuditAction('Import Catalogue', `${createdList.length} produit(s) importé(s) et publié(s) sur le Cloud.`);
+      showToast(`${createdList.length} produit(s) importé(s) et publié(s) avec succès !`);
+      return createdList;
+    } catch (err) {
+      console.error('Import products error:', err);
+      handleFirestoreError(err, OperationType.WRITE, 'products');
+      showToast('Erreur lors de l\'importation des produits.');
+      return createdList;
     } finally {
       setIsSyncingCatalog(false);
     }
@@ -1157,26 +1199,78 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setIsRefreshingOrders(true);
     try {
       const snap = await getDocs(collection(db, 'orders'));
+      const savedDeleted = localStorage.getItem('rwyse_deleted_order_ids_v6');
+      const deletedSet = new Set<string>(savedDeleted ? JSON.parse(savedDeleted) : []);
+      const savedDeletedCust = localStorage.getItem('rwyse_deleted_customer_keys_v6');
+      const deletedCustList: string[] = savedDeletedCust ? JSON.parse(savedDeletedCust) : [];
+      const deletedCustSet = new Set(deletedCustList.map((k) => k.replace(/\s+/g, '').toLowerCase()));
+
       const loaded: Order[] = [];
       snap.forEach((docSnap) => {
         const data = docSnap.data() as Order;
-        if (data) {
-          loaded.push({
-            ...data,
-            id: data.id || docSnap.id,
-          });
+        if (data && data.orderNumber) {
+          const ordId = data.id || docSnap.id;
+          const phoneKey = (data.customerPhone || '').replace(/\s+/g, '').toLowerCase();
+          const emailKey = (data.customerEmail || '').trim().toLowerCase();
+          const nameKey = (data.customerName || '').trim().toLowerCase();
+          if (!deletedSet.has(ordId) && !deletedCustSet.has(phoneKey) && !deletedCustSet.has(emailKey) && !deletedCustSet.has(nameKey)) {
+            loaded.push({
+              ...data,
+              id: ordId,
+            });
+          }
         }
       });
       loaded.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
       setOrders(loaded);
       localStorage.setItem('rwyse_orders_v6', JSON.stringify(loaded));
       setIsCloudSynced(true);
-      showToast(`Synchronisation réussie (${loaded.length} commandes récupérées depuis le Cloud).`);
+      showToast(`Synchronisation réussie (${loaded.length} commandes réelles récupérées depuis le Cloud).`);
     } catch (err) {
       handleFirestoreError(err, OperationType.GET, 'orders');
       showToast('Erreur lors de la synchronisation Firestore.');
     } finally {
       setIsRefreshingOrders(false);
+    }
+  };
+
+  // Delete all demo/test orders so the store ONLY has genuine client orders
+  const clearAllDemoOrders = async () => {
+    try {
+      const orderIds = orders.map((o) => o.id);
+      // Mark all current order IDs as deleted
+      setDeletedOrderIds((prev) => {
+        const updated = Array.from(new Set([...prev, ...orderIds, 'ord-101', 'ord-102']));
+        localStorage.setItem('rwyse_deleted_order_ids_v6', JSON.stringify(updated));
+        return updated;
+      });
+      // Mark demo customers as deleted
+      setDeletedCustomerKeys((prev) => {
+        const updated = Array.from(new Set([...prev, 'sarra.mansour@example.tn', '+216 52 341 890', 'yassine.trabelsi@example.tn', '+216 98 765 432']));
+        localStorage.setItem('rwyse_deleted_customer_keys_v6', JSON.stringify(updated));
+        return updated;
+      });
+
+      // Clear in-memory & local state
+      setOrders([]);
+      localStorage.setItem('rwyse_orders_v6', JSON.stringify([]));
+      setNotifications([]);
+      localStorage.setItem('rwyse_notifications', JSON.stringify([]));
+      setAdminSelectedOrderId(null);
+
+      // Delete from Firestore
+      for (const id of orderIds) {
+        try {
+          await deleteDoc(doc(db, 'orders', id));
+        } catch (e) {
+          console.warn('Note deleting order from Firestore:', id, e);
+        }
+      }
+
+      logAuditAction('Nettoyage Commandes', 'Toutes les commandes de test ont été effacées. Seules les commandes de vrais clients seront enregistrées.');
+      showToast('Commandes de test effacées avec succès. En attente de commandes réelles.');
+    } catch (err) {
+      console.warn('Error clearing demo orders:', err);
     }
   };
 
@@ -1287,7 +1381,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           sanitized[key] = await compressImageIfNeeded(val);
         }
       }
-      await setDoc(doc(db, 'settings', 'global'), sanitized, { merge: true });
+      const toSave = sanitizeForFirestore(sanitized);
+      await setDoc(doc(db, 'settings', 'global'), toSave);
       console.log('Site settings synced to Firestore settings/global');
     } catch (err) {
       console.warn('Could not save settings to Firestore:', err);
@@ -1367,6 +1462,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         isRefreshingOrders,
         syncAllProductsToCloud,
         isSyncingCatalog,
+        importProducts,
+        clearAllDemoOrders,
       }}
     >
       {children}

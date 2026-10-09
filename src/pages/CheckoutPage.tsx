@@ -91,7 +91,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onNavigate, onOrderP
         city: city.trim(),
         region: selectedZone?.region || 'Tunis',
         postalCode: postalCode.trim() || '1000',
-        notes: notes.trim() || undefined,
+        notes: notes.trim(),
         items: orderItems,
         subtotal,
         deliveryFee,

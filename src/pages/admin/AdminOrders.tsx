@@ -24,6 +24,7 @@ export const AdminOrders: React.FC = () => {
     updateOrderStatus,
     deleteOrder,
     refreshOrdersFromCloud,
+    clearAllDemoOrders,
     isCloudSynced,
     isRefreshingOrders,
     siteSettings,
@@ -132,7 +133,22 @@ export const AdminOrders: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {orders.length > 0 && (
+            <button
+              onClick={async () => {
+                if (window.confirm('Voulez-vous réinitialiser et supprimer toutes les commandes de test pour ne conserver que les futures commandes réelles de vos clients ?')) {
+                  await clearAllDemoOrders();
+                }
+              }}
+              className="px-3 py-2 bg-neutral-900 border border-red-900/60 hover:border-red-500 text-red-400 hover:text-red-300 text-xs font-mono uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer shadow-md"
+              title="Supprimer les commandes de test"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>Nettoyer Commandes Test</span>
+            </button>
+          )}
+
           <button
             onClick={() => refreshOrdersFromCloud()}
             disabled={isRefreshingOrders}

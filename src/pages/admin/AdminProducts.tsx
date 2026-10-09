@@ -1,8 +1,28 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useStore } from '../../context/StoreContext';
 import { Product, ProductCategory } from '../../types';
-import { Plus, Search, Edit3, Copy, Trash2, X, Check, Eye, RotateCcw, AlertTriangle, Cloud, RefreshCw } from 'lucide-react';
+import {
+  Plus,
+  Search,
+  Edit3,
+  Copy,
+  Trash2,
+  X,
+  Check,
+  Eye,
+  RotateCcw,
+  AlertTriangle,
+  Cloud,
+  RefreshCw,
+  Upload,
+  Download,
+  FileText,
+  Image as ImageIcon,
+  Sparkles,
+  CheckCircle,
+} from 'lucide-react';
 import { hoodieImg } from '../../data/initialData';
+import { compressImageIfNeeded } from '../../utils/imageCompressor';
 
 export const AdminProducts: React.FC = () => {
   const {
@@ -16,6 +36,7 @@ export const AdminProducts: React.FC = () => {
     syncAllProductsToCloud,
     isSyncingCatalog,
     isCloudSynced,
+    importProducts,
   } = useStore();
 
   const [search, setSearch] = useState('');
@@ -24,6 +45,19 @@ export const AdminProducts: React.FC = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [activeModalTab, setActiveModalTab] = useState<'info' | 'media3d' | 'stock'>('info');
   const [preview360Index, setPreview360Index] = useState(0);
+
+  // Bulk Import state
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [importTab, setImportTab] = useState<'file' | 'json'>('file');
+  const [importJsonText, setImportJsonText] = useState('');
+  const [importedPreviewList, setImportedPreviewList] = useState<Omit<Product, 'id' | 'createdAt'>[]>([]);
+  const [importError, setImportError] = useState<string | null>(null);
+  const [isPublishingImport, setIsPublishingImport] = useState(false);
+  const [isCompressingFormImage, setIsCompressingFormImage] = useState(false);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
+  const bulkFileInputRef = useRef<HTMLInputElement>(null);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -45,6 +79,7 @@ export const AdminProducts: React.FC = () => {
     colorName: 'Onyx Black',
     colorHex: '#111111',
     imageUrl: hoodieImg,
+    additionalImages: [] as string[],
     threeDModelUrl: '',
     threeSixtyFramesInput: '',
     stockS: 10,
@@ -63,6 +98,261 @@ export const AdminProducts: React.FC = () => {
     }
     return true;
   });
+
+  const handleImageFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, isGallery = false) => {
+    const files = e.target.files ? Array.from(e.target.files) : [];
+    if (files.length === 0) return;
+    setIsCompressingFormImage(true);
+    try {
+      if (isGallery) {
+        const compressedList: string[] = [];
+        for (const file of files) {
+          const base64 = await new Promise<string>((resolve) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve((reader.result as string) || '');
+            reader.onerror = () => resolve('');
+            reader.readAsDataURL(file);
+          });
+          if (base64) {
+            const compressed = await compressImageIfNeeded(base64, 1000, 1000, 0.75);
+            compressedList.push(compressed);
+          }
+        }
+        setFormData((prev) => ({
+          ...prev,
+          additionalImages: [...prev.additionalImages, ...compressedList],
+        }));
+      } else {
+        const file = files[0];
+        const base64 = await new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve((reader.result as string) || '');
+          reader.onerror = () => resolve('');
+          reader.readAsDataURL(file);
+        });
+        if (base64) {
+          const compressed = await compressImageIfNeeded(base64, 1000, 1000, 0.75);
+          setFormData((prev) => ({
+            ...prev,
+            imageUrl: compressed,
+          }));
+        }
+      }
+    } catch (err) {
+      console.warn('Image upload error:', err);
+    } finally {
+      setIsCompressingFormImage(false);
+      e.target.value = '';
+    }
+  };
+
+  const handleRemoveAdditionalImage = (index: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      additionalImages: prev.additionalImages.filter((_, i) => i !== index),
+    }));
+  };
+
+  const downloadSampleJson = () => {
+    const sample = [
+      {
+        name: "RWYSE Cyber Raw Minimalist Tee",
+        price: 95,
+        salePrice: 85,
+        category: "T-Shirts",
+        collection: "DROP 01: ORIGIN",
+        sku: "RWY-TS-901",
+        description: "Heavyweight 280 GSM cotton oversize tee with raw edges.",
+        fabric: "100% Organic Cotton",
+        fit: "Boxy Relaxed",
+        imageUrl: hoodieImg,
+        stockS: 20,
+        stockM: 25,
+        stockL: 20,
+        stockXL: 10
+      },
+      {
+        name: "RWYSE Tactical Utility Heavy Cargo",
+        price: 185,
+        category: "Pants",
+        collection: "DROP 01: ORIGIN",
+        sku: "RWY-PT-402",
+        description: "Double knee reinforced technical cargos with magnetic snap pockets.",
+        fabric: "Ripstop Cotton / Cordura",
+        fit: "Tapered Streetwear",
+        imageUrl: hoodieImg,
+        stockS: 10,
+        stockM: 15,
+        stockL: 15,
+        stockXL: 5
+      }
+    ];
+    const blob = new Blob([JSON.stringify(sample, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'rwyse_catalogue_modele.json';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const downloadSampleCsv = () => {
+    const csvContent = `name,price,category,sku,imageUrl,stock
+"RWYSE Heavy Mineral Boxy Hoodie",160,"Hoodies","RWY-HD-101","https://images.unsplash.com/photo-1556905055-8f358a7a47b2?auto=format&fit=crop&q=80&w=1200",20
+"RWYSE Raw Minimalist Street T-Shirt",95,"T-Shirts","RWY-TS-202","https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&q=80&w=1200",25
+"RWYSE Heavyweight Tactical Cargo Pants",185,"Pants","RWY-PA-303","https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?auto=format&fit=crop&q=80&w=1200",15`;
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'rwyse_catalogue_modele.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const parseProductsContent = (content: string, fileName: string) => {
+    try {
+      setImportError(null);
+      if (fileName.endsWith('.json') || content.trim().startsWith('[') || content.trim().startsWith('{')) {
+        let parsed = JSON.parse(content);
+        if (!Array.isArray(parsed)) {
+          parsed = [parsed];
+        }
+        const valid: Omit<Product, 'id' | 'createdAt'>[] = parsed.map((item: any, idx: number) => {
+          const cat = categories.includes(item.category) ? item.category : 'Hoodies';
+          const sku = item.sku || `RWY-IMP-${Date.now().toString().slice(-4)}-${idx + 1}`;
+          const price = Number(item.price) || 150;
+          const name = item.name || `Pièce Importée #${idx + 1}`;
+          const img = item.imageUrl || (item.colors?.[0]?.images?.[0]) || hoodieImg;
+          const sizes = item.sizes || [
+            { size: 'S', stock: Number(item.stockS ?? item.stock ?? 10) },
+            { size: 'M', stock: Number(item.stockM ?? item.stock ?? 15) },
+            { size: 'L', stock: Number(item.stockL ?? item.stock ?? 15) },
+            { size: 'XL', stock: Number(item.stockXL ?? item.stock ?? 5) },
+            { size: 'XXL', stock: Number(item.stockXXL ?? 2) },
+          ];
+          return {
+            name,
+            slug: item.slug || name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+            price,
+            salePrice: item.salePrice ? Number(item.salePrice) : undefined,
+            category: cat,
+            collection: item.collection || 'DROP 01: ORIGIN',
+            description: item.description || 'Pièce exclusive issue de la collection RWYSE.',
+            fabric: item.fabric || '100% Combed Organic Cotton (500 GSM)',
+            fit: item.fit || 'Signature Streetwear Fit',
+            careInstructions: item.careInstructions || 'Cold gentle wash. Line dry in shade.',
+            sku,
+            isFeatured: item.isFeatured ?? true,
+            isNewDrop: item.isNewDrop ?? true,
+            isSoldOut: item.isSoldOut ?? false,
+            status: item.status || 'published',
+            sizes,
+            colors: item.colors || [
+              {
+                name: item.colorName || 'Onyx Mineral',
+                hex: item.colorHex || '#111111',
+                images: [img],
+              },
+            ],
+            details: item.details || [
+              'High-density 500 GSM loopback organic cotton',
+              'Architectural boxy streetwear silhouette with drop shoulders',
+              'Garment-dyed and enzyme washed for ultra-soft handfeel',
+              'Engineered and produced in Tunisia',
+            ],
+          };
+        });
+        setImportedPreviewList(valid);
+      } else {
+        // CSV parser
+        const lines = content.split('\n').map((l) => l.trim()).filter(Boolean);
+        if (lines.length < 2) {
+          throw new Error('Le fichier CSV doit contenir un en-tête et au moins une ligne de données.');
+        }
+        const headers = lines[0].split(',').map((h) => h.trim().toLowerCase().replace(/"/g, ''));
+        const nameIdx = headers.indexOf('name') !== -1 ? headers.indexOf('name') : headers.indexOf('nom');
+        const priceIdx = headers.indexOf('price') !== -1 ? headers.indexOf('price') : headers.indexOf('prix');
+        const catIdx = headers.indexOf('category') !== -1 ? headers.indexOf('category') : headers.indexOf('categorie');
+        const skuIdx = headers.indexOf('sku');
+        const imgIdx = headers.indexOf('imageurl') !== -1 ? headers.indexOf('imageurl') : headers.indexOf('image');
+        const stockIdx = headers.indexOf('stock');
+
+        const valid: Omit<Product, 'id' | 'createdAt'>[] = [];
+        for (let i = 1; i < lines.length; i++) {
+          const row = lines[i].split(',').map((c) => c.trim().replace(/^"|"$/g, ''));
+          const name = nameIdx !== -1 && row[nameIdx] ? row[nameIdx] : `Article Importé #${i}`;
+          const price = priceIdx !== -1 && !isNaN(Number(row[priceIdx])) ? Number(row[priceIdx]) : 150;
+          const cat = (catIdx !== -1 && categories.includes(row[catIdx] as any)) ? (row[catIdx] as ProductCategory) : 'Hoodies';
+          const sku = skuIdx !== -1 && row[skuIdx] ? row[skuIdx] : `RWY-CSV-${i}`;
+          const img = imgIdx !== -1 && row[imgIdx] ? row[imgIdx] : hoodieImg;
+          const stock = stockIdx !== -1 && !isNaN(Number(row[stockIdx])) ? Number(row[stockIdx]) : 12;
+
+          valid.push({
+            name,
+            slug: name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+            price,
+            category: cat,
+            collection: 'DROP 01: ORIGIN',
+            description: 'Produit importé via fichier CSV.',
+            fabric: '100% Organic Cotton',
+            fit: 'Boxy Fit',
+            careInstructions: 'Machine wash cold.',
+            sku,
+            isFeatured: true,
+            isNewDrop: true,
+            isSoldOut: false,
+            status: 'published',
+            sizes: [
+              { size: 'S', stock },
+              { size: 'M', stock },
+              { size: 'L', stock },
+              { size: 'XL', stock: Math.max(2, Math.floor(stock / 2)) },
+              { size: 'XXL', stock: Math.max(1, Math.floor(stock / 4)) },
+            ],
+            colors: [
+              {
+                name: 'Noir',
+                hex: '#111111',
+                images: [img],
+              },
+            ],
+            details: [
+              'High-density premium streetwear silhouette',
+              'Engineered and produced in Tunisia',
+            ],
+          });
+        }
+        setImportedPreviewList(valid);
+      }
+    } catch (err: any) {
+      setImportError(err?.message || 'Erreur lors du traitement du fichier.');
+    }
+  };
+
+  const handleBulkFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const text = reader.result as string;
+      parseProductsContent(text, file.name);
+    };
+    reader.readAsText(file);
+  };
+
+  const handleConfirmImportAndPublish = async () => {
+    if (importedPreviewList.length === 0) return;
+    setIsPublishingImport(true);
+    try {
+      await importProducts(importedPreviewList);
+      setIsImportModalOpen(false);
+      setImportedPreviewList([]);
+      setImportJsonText('');
+    } finally {
+      setIsPublishingImport(false);
+    }
+  };
 
   const handleOpenAdd = () => {
     setFormData({
@@ -84,6 +374,7 @@ export const AdminProducts: React.FC = () => {
       colorName: 'Royal Blue',
       colorHex: '#1e3a8a',
       imageUrl: hoodieImg,
+      additionalImages: [],
       threeDModelUrl: '',
       threeSixtyFramesInput: '',
       stockS: 15,
@@ -123,6 +414,7 @@ export const AdminProducts: React.FC = () => {
       colorName: p.colors[0]?.name || 'Standard',
       colorHex: p.colors[0]?.hex || '#111111',
       imageUrl: p.colors[0]?.images[0] || hoodieImg,
+      additionalImages: p.colors[0]?.images.slice(1) || [],
       threeDModelUrl: p.threeDModelUrl || '',
       threeSixtyFramesInput: p.threeSixtyFrames?.join('\n') || '',
       stockS: sStock,
@@ -161,6 +453,9 @@ export const AdminProducts: React.FC = () => {
       .map((s) => s.trim())
       .filter(Boolean);
 
+    const allImages = [formData.imageUrl, ...formData.additionalImages].filter(Boolean);
+    const finalImages = allImages.length > 0 ? allImages : [hoodieImg];
+
     if (editingProduct) {
       updateProduct({
         ...editingProduct,
@@ -186,13 +481,13 @@ export const AdminProducts: React.FC = () => {
           {
             name: formData.colorName,
             hex: formData.colorHex,
-            images: [formData.imageUrl],
+            images: finalImages,
             threeDModelUrl: formData.threeDModelUrl.trim() || undefined,
             threeSixtyFrames: frames.length > 0 ? frames : undefined,
           },
         ],
       });
-      logAuditAction('Modification Produit', `Produit ${formData.name} mis à jour (SKU: ${formData.sku})`);
+      logAuditAction('Modification Produit', `Produit ${formData.name} mis à jour et synchronisé (SKU: ${formData.sku})`);
     } else {
       addProduct({
         name: formData.name,
@@ -217,7 +512,7 @@ export const AdminProducts: React.FC = () => {
           {
             name: formData.colorName,
             hex: formData.colorHex,
-            images: [formData.imageUrl],
+            images: finalImages,
             threeDModelUrl: formData.threeDModelUrl.trim() || undefined,
             threeSixtyFrames: frames.length > 0 ? frames : undefined,
           },
@@ -229,7 +524,7 @@ export const AdminProducts: React.FC = () => {
           'Engineered and produced in Tunisia',
         ],
       });
-      logAuditAction('Création Produit', `Nouveau produit ${formData.name} créé (SKU: ${formData.sku})`);
+      logAuditAction('Création Produit', `Nouveau produit ${formData.name} publié en direct (SKU: ${formData.sku})`);
     }
 
     setIsAddModalOpen(false);
@@ -255,7 +550,21 @@ export const AdminProducts: React.FC = () => {
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2.5">
+          <button
+            onClick={() => {
+              setImportedPreviewList([]);
+              setImportError(null);
+              setImportJsonText('');
+              setIsImportModalOpen(true);
+            }}
+            title="Importer des pièces via CSV ou JSON et les publier en 1 clic"
+            className="px-4 py-2.5 bg-neutral-900 border border-neutral-700 hover:border-cyan-500 text-white text-xs font-semibold uppercase tracking-wider hover:text-cyan-300 transition-colors flex items-center gap-2 cursor-pointer shadow-md"
+          >
+            <Upload className="w-4 h-4 text-cyan-400" />
+            <span>Importer Catalogue (CSV / JSON)</span>
+          </button>
+
           <button
             onClick={syncAllProductsToCloud}
             disabled={isSyncingCatalog}
@@ -534,24 +843,163 @@ export const AdminProducts: React.FC = () => {
                       />
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="text-neutral-400 uppercase tracking-wider block mb-1">Collection</label>
-                        <input
-                          type="text"
-                          value={formData.collection}
-                          onChange={(e) => setFormData({ ...formData, collection: e.target.value })}
-                          className="w-full px-3 py-2 bg-neutral-900 border border-neutral-800 text-white"
-                        />
+                    <div>
+                      <label className="text-neutral-400 uppercase tracking-wider block mb-1">Collection</label>
+                      <input
+                        type="text"
+                        value={formData.collection}
+                        onChange={(e) => setFormData({ ...formData, collection: e.target.value })}
+                        className="w-full px-3 py-2 bg-neutral-900 border border-neutral-800 text-white"
+                      />
+                    </div>
+
+                    {/* Main Image Upload & Import Area */}
+                    <div className="p-3 sm:p-4 bg-neutral-900/60 border border-neutral-800 space-y-4">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-mono uppercase tracking-wider text-white font-bold flex items-center gap-2">
+                          <ImageIcon className="w-4 h-4 text-emerald-400" />
+                          <span>Photos du Vêtement (Import Direct Appareil / PC)</span>
+                        </span>
+                        {isCompressingFormImage ? (
+                          <span className="text-[10px] font-mono text-amber-400 flex items-center gap-1.5 bg-amber-950/40 px-2 py-0.5 border border-amber-800/60">
+                            <RefreshCw className="w-3 h-3 animate-spin" />
+                            <span>Optimisation pour le Cloud...</span>
+                          </span>
+                        ) : (
+                          <span className="text-[10px] font-mono text-emerald-400 flex items-center gap-1">
+                            <CheckCircle className="w-3 h-3" />
+                            <span>Synchro Cloud Directe</span>
+                          </span>
+                        )}
                       </div>
-                      <div>
-                        <label className="text-neutral-400 uppercase tracking-wider block mb-1">Image Principale (URL)</label>
+
+                      {/* Main Photo Drop / Import Box */}
+                      <div className="space-y-3">
                         <input
-                          type="text"
-                          value={formData.imageUrl}
-                          onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
-                          className="w-full px-3 py-2 bg-neutral-900 border border-neutral-800 text-white font-mono"
+                          type="file"
+                          ref={fileInputRef}
+                          accept="image/*"
+                          onChange={(e) => handleImageFileUpload(e, false)}
+                          className="hidden"
                         />
+
+                        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+                          {/* Main Image Preview Thumbnail */}
+                          <div className="w-28 h-36 bg-neutral-950 border border-neutral-700/80 shrink-0 relative overflow-hidden group shadow-lg">
+                            {formData.imageUrl ? (
+                              <>
+                                <img
+                                  src={formData.imageUrl}
+                                  alt="Garment Preview"
+                                  className="w-full h-full object-cover"
+                                />
+                                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1 p-2">
+                                  <button
+                                    type="button"
+                                    onClick={() => fileInputRef.current?.click()}
+                                    className="px-2 py-1 bg-white text-black text-[9px] font-bold uppercase tracking-wider hover:bg-neutral-200 cursor-pointer"
+                                  >
+                                    Changer
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => setFormData({ ...formData, imageUrl: '' })}
+                                    className="px-2 py-1 bg-red-600 text-white text-[9px] font-bold uppercase tracking-wider hover:bg-red-700 cursor-pointer"
+                                  >
+                                    Retirer
+                                  </button>
+                                </div>
+                              </>
+                            ) : (
+                              <div
+                                onClick={() => fileInputRef.current?.click()}
+                                className="w-full h-full flex flex-col items-center justify-center text-neutral-500 hover:text-white cursor-pointer transition-colors p-2 text-center"
+                              >
+                                <Upload className="w-6 h-6 mb-1 text-neutral-400" />
+                                <span className="text-[10px] font-mono uppercase">Importer Photo</span>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Upload Actions & URL Fallback */}
+                          <div className="flex-1 space-y-3 w-full">
+                            <div className="flex flex-wrap gap-2">
+                              <button
+                                type="button"
+                                onClick={() => fileInputRef.current?.click()}
+                                className="px-4 py-2.5 bg-white text-black text-xs font-bold uppercase tracking-wider hover:bg-neutral-200 transition-colors flex items-center gap-2 cursor-pointer shadow-md"
+                              >
+                                <Upload className="w-4 h-4" />
+                                <span>Importer depuis Téléphone / PC</span>
+                              </button>
+                            </div>
+
+                            <p className="text-[11px] text-neutral-400">
+                              Sélectionnez directement vos photos depuis votre galerie mobile ou dossier PC. Les images sont automatiquement compressées et synchronisées en haute qualité sur Firestore.
+                            </p>
+
+                            <div className="space-y-1 pt-1">
+                              <span className="text-[10px] font-mono uppercase tracking-wider text-neutral-400 block">
+                                Ou saisir le lien URL d'une photo web :
+                              </span>
+                              <input
+                                type="text"
+                                value={formData.imageUrl}
+                                onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
+                                placeholder="https://..."
+                                className="w-full px-3 py-2 bg-neutral-950 border border-neutral-800 text-white font-mono text-xs focus:border-white focus:outline-none"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Additional Gallery Photos (Lookbook, Angles) */}
+                      <div className="pt-3 border-t border-neutral-800 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] font-mono uppercase tracking-wider text-neutral-300 font-bold flex items-center gap-1.5">
+                            <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
+                            <span>Galerie Additionnelle (Angles, Lookbook, Détails)</span>
+                          </span>
+                          <input
+                            type="file"
+                            ref={galleryInputRef}
+                            accept="image/*"
+                            multiple
+                            onChange={(e) => handleImageFileUpload(e, true)}
+                            className="hidden"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => galleryInputRef.current?.click()}
+                            className="px-2.5 py-1 bg-neutral-800 hover:bg-neutral-700 text-white text-[10px] font-mono uppercase tracking-wider flex items-center gap-1 cursor-pointer transition-colors"
+                          >
+                            <Plus className="w-3 h-3 text-cyan-400" />
+                            <span>Importer d'autres photos</span>
+                          </button>
+                        </div>
+
+                        {formData.additionalImages.length > 0 ? (
+                          <div className="flex flex-wrap gap-2 pt-1">
+                            {formData.additionalImages.map((img, idx) => (
+                              <div key={idx} className="relative w-16 h-20 bg-neutral-950 border border-neutral-800 group overflow-hidden shadow-sm">
+                                <img src={img} alt={`Gallery ${idx}`} className="w-full h-full object-cover" />
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemoveAdditionalImage(idx)}
+                                  className="absolute top-0.5 right-0.5 bg-black/80 text-red-400 p-1 opacity-0 group-hover:opacity-100 transition-opacity hover:text-white"
+                                  title="Supprimer cette photo"
+                                >
+                                  <X className="w-3 h-3" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-[10px] font-mono text-neutral-500">
+                            Aucune photo secondaire ajoutée. Vous pouvez en sélectionner plusieurs en une seule fois.
+                          </p>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -708,6 +1156,234 @@ export const AdminProducts: React.FC = () => {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Bulk Catalog Import Modal (CSV / JSON) */}
+      {isImportModalOpen && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="fixed inset-0 bg-black/85 backdrop-blur-sm" onClick={() => !isPublishingImport && setIsImportModalOpen(false)} />
+          <div className="min-h-full flex items-center justify-center p-3 sm:p-6">
+            <div className="relative w-full max-w-3xl bg-[#111116] border border-neutral-800 text-neutral-100 shadow-2xl p-6 sm:p-8 z-10 space-y-6 animate-in fade-in zoom-in-95 duration-150">
+              
+              {/* Modal Header */}
+              <div className="flex items-start justify-between border-b border-neutral-800 pb-4">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-[10px] font-mono uppercase tracking-[0.25em] text-cyan-400">
+                      IMPORTATEUR DE CATALOGUE // MULTI-PIÈCES
+                    </span>
+                    <span className="px-2 py-0.5 text-[10px] font-mono uppercase bg-emerald-950/80 border border-emerald-700 text-emerald-400">
+                      Publication Cloud Live
+                    </span>
+                  </div>
+                  <h3 className="text-xl sm:text-2xl font-bold font-display uppercase tracking-tight text-white">
+                    Importer & Publier des Produits
+                  </h3>
+                  <p className="text-xs text-neutral-400 mt-1">
+                    Importez plusieurs vêtements à la fois via un fichier CSV ou JSON. Ils seront immédiatement enregistrés et visibles pour les clients en direct.
+                  </p>
+                </div>
+                <button
+                  onClick={() => !isPublishingImport && setIsImportModalOpen(false)}
+                  className="p-1.5 text-neutral-400 hover:text-white cursor-pointer hover:bg-neutral-800 rounded-xs"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Sample Templates Download Helpers */}
+              <div className="p-3 bg-neutral-900/80 border border-neutral-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                <div className="flex items-center gap-2 text-neutral-300">
+                  <FileText className="w-4 h-4 text-cyan-400 shrink-0" />
+                  <span>Téléchargez un modèle pour remplir vos pièces au bon format :</span>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={downloadSampleCsv}
+                    className="px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 text-neutral-200 text-xs font-mono uppercase flex items-center gap-1.5 cursor-pointer transition-colors"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    <span>Modèle CSV</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={downloadSampleJson}
+                    className="px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 text-neutral-200 text-xs font-mono uppercase flex items-center gap-1.5 cursor-pointer transition-colors"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    <span>Modèle JSON</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Tabs: File Upload vs Raw JSON */}
+              <div className="flex border-b border-neutral-800 text-xs font-mono uppercase">
+                <button
+                  type="button"
+                  onClick={() => setImportTab('file')}
+                  className={`pb-2 px-3 border-b-2 font-bold cursor-pointer transition-colors ${
+                    importTab === 'file' ? 'border-white text-white' : 'border-transparent text-neutral-500 hover:text-neutral-300'
+                  }`}
+                >
+                  Téléverser un Fichier (.csv ou .json)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setImportTab('json')}
+                  className={`pb-2 px-3 border-b-2 font-bold cursor-pointer transition-colors ${
+                    importTab === 'json' ? 'border-white text-white' : 'border-transparent text-neutral-500 hover:text-neutral-300'
+                  }`}
+                >
+                  Coller du Code JSON
+                </button>
+              </div>
+
+              {/* Tab 1: File Upload */}
+              {importTab === 'file' && (
+                <div className="space-y-3">
+                  <input
+                    type="file"
+                    ref={bulkFileInputRef}
+                    accept=".csv,.json,text/csv,application/json"
+                    onChange={handleBulkFileSelected}
+                    className="hidden"
+                  />
+                  <div
+                    onClick={() => bulkFileInputRef.current?.click()}
+                    className="border-2 border-dashed border-neutral-700 hover:border-cyan-400 p-8 text-center bg-neutral-900/40 hover:bg-neutral-900/70 cursor-pointer transition-all space-y-3 group"
+                  >
+                    <div className="w-12 h-12 mx-auto rounded-full bg-neutral-800 group-hover:bg-cyan-950/60 border border-neutral-700 group-hover:border-cyan-600 flex items-center justify-center text-neutral-400 group-hover:text-cyan-400 transition-colors">
+                      <Upload className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-white">
+                        Cliquez pour sélectionner un fichier CSV ou JSON
+                      </p>
+                      <p className="text-xs text-neutral-400 mt-1">
+                        Compatible avec les exports Excel / CSV et formats JSON
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Tab 2: Raw JSON Paste */}
+              {importTab === 'json' && (
+                <div className="space-y-3">
+                  <textarea
+                    rows={6}
+                    placeholder={`[
+  {
+    "name": "RWYSE Heavy Mineral Boxy Hoodie",
+    "price": 160,
+    "category": "Hoodies",
+    "sku": "RWY-HD-101",
+    "imageUrl": "https://..."
+  }
+]`}
+                    value={importJsonText}
+                    onChange={(e) => {
+                      setImportJsonText(e.target.value);
+                      if (e.target.value.trim()) {
+                        parseProductsContent(e.target.value, 'paste.json');
+                      } else {
+                        setImportedPreviewList([]);
+                      }
+                    }}
+                    className="w-full px-3 py-2 bg-neutral-950 border border-neutral-800 text-white font-mono text-xs focus:outline-none focus:border-cyan-500"
+                  />
+                </div>
+              )}
+
+              {/* Error Message */}
+              {importError && (
+                <div className="p-3 bg-red-950/40 border border-red-800/80 text-red-300 text-xs flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 shrink-0" />
+                  <span>{importError}</span>
+                </div>
+              )}
+
+              {/* Parsed Preview Table */}
+              {importedPreviewList.length > 0 && (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold font-mono uppercase text-emerald-400 flex items-center gap-1.5">
+                      <CheckCircle className="w-4 h-4 text-emerald-400" />
+                      <span>{importedPreviewList.length} vêtement(s) détecté(s) avec succès</span>
+                    </span>
+                    <span className="text-[11px] font-mono text-neutral-400">
+                      Prêt pour publication immédiate
+                    </span>
+                  </div>
+
+                  <div className="border border-neutral-800 bg-neutral-950 max-h-56 overflow-y-auto">
+                    <table className="w-full text-left text-xs">
+                      <thead className="text-[10px] font-mono uppercase text-neutral-400 bg-neutral-900 border-b border-neutral-800 sticky top-0">
+                        <tr>
+                          <th className="py-2 px-3">Pièce</th>
+                          <th className="py-2 px-3">SKU</th>
+                          <th className="py-2 px-3">Catégorie</th>
+                          <th className="py-2 px-3">Prix</th>
+                          <th className="py-2 px-3">Stock Total</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-neutral-800/60 font-mono text-[11px]">
+                        {importedPreviewList.map((p, i) => {
+                          const totalStock = (p.sizes || []).reduce((s, sz) => s + sz.stock, 0);
+                          const img = p.colors?.[0]?.images?.[0] || hoodieImg;
+                          return (
+                            <tr key={i} className="hover:bg-neutral-900/30">
+                              <td className="py-2 px-3 flex items-center gap-2">
+                                <img src={img} alt={p.name} className="w-7 h-8 object-cover bg-neutral-900 border border-neutral-800" />
+                                <span className="font-semibold text-white truncate max-w-[200px]">{p.name}</span>
+                              </td>
+                              <td className="py-2 px-3 text-neutral-400">{p.sku}</td>
+                              <td className="py-2 px-3 text-cyan-400">{p.category}</td>
+                              <td className="py-2 px-3 text-emerald-400 font-bold">{p.price} {siteSettings.currency}</td>
+                              <td className="py-2 px-3 text-neutral-300">{totalStock} unités</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {/* Modal Actions */}
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-neutral-800">
+                <button
+                  type="button"
+                  disabled={isPublishingImport}
+                  onClick={() => setIsImportModalOpen(false)}
+                  className="px-4 py-2 text-xs font-semibold uppercase tracking-wider text-neutral-400 hover:text-white bg-neutral-900 border border-neutral-800 hover:border-neutral-700 cursor-pointer disabled:opacity-50"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="button"
+                  disabled={isPublishingImport || importedPreviewList.length === 0}
+                  onClick={handleConfirmImportAndPublish}
+                  className="px-6 py-2.5 text-xs font-bold uppercase tracking-wider text-black bg-white hover:bg-neutral-200 transition-colors cursor-pointer flex items-center gap-2 shadow-xl disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  {isPublishingImport ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin text-black" />
+                      <span>Publication sur le Cloud Firestore...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4 text-emerald-600" />
+                      <span>Importer & Publier ({importedPreviewList.length} pièces)</span>
+                    </>
+                  )}
+                </button>
+              </div>
+
             </div>
           </div>
         </div>
