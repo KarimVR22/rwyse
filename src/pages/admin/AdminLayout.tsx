@@ -51,7 +51,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
   onLogout,
   children,
 }) => {
-  const { orders, notifications, markNotificationRead, clearNotifications } = useStore();
+  const { orders, notifications, markNotificationRead, clearNotifications, setAdminSelectedOrderId } = useStore();
   const [showNotifications, setShowNotifications] = React.useState(false);
 
   const unreadCount = notifications.filter((n) => !n.read).length;
@@ -132,16 +132,36 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
                     notifications.map((n) => (
                       <div
                         key={n.id}
-                        onClick={() => markNotificationRead(n.id)}
-                        className={`py-2.5 px-2 cursor-pointer transition-colors ${
-                          n.read ? 'opacity-60' : 'bg-neutral-900/60'
+                        onClick={() => {
+                          markNotificationRead(n.id);
+                          setShowNotifications(false);
+                          if (n.orderId || n.type === 'order') {
+                            if (n.orderId) {
+                              setAdminSelectedOrderId(n.orderId);
+                            }
+                            onSelectTab('orders');
+                          } else if (n.type === 'stock') {
+                            onSelectTab('inventory');
+                          }
+                        }}
+                        className={`p-3 cursor-pointer transition-colors rounded-sm hover:bg-neutral-800/80 ${
+                          n.read ? 'opacity-65' : 'bg-neutral-900/90 border-l-2 border-emerald-500'
                         }`}
                       >
                         <div className="flex items-center justify-between text-[11px]">
-                          <strong className="text-white font-mono">{n.title}</strong>
-                          <span className="text-neutral-500 text-[10px]">{n.timestamp}</span>
+                          <strong className="text-white font-mono flex items-center gap-1.5">
+                            {n.type === 'order' && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />}
+                            {n.title}
+                          </strong>
+                          <span className="text-neutral-500 text-[10px] font-mono">{n.timestamp}</span>
                         </div>
                         <p className="text-xs text-neutral-300 mt-1 leading-snug">{n.message}</p>
+                        {(n.orderId || n.type === 'order') && (
+                          <div className="mt-2 flex items-center gap-1 text-[11px] font-mono text-emerald-400 font-medium hover:underline">
+                            <span>Ouvrir la commande</span>
+                            <span>→</span>
+                          </div>
+                        )}
                       </div>
                     ))
                   )}

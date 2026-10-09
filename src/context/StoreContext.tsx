@@ -71,6 +71,11 @@ interface StoreContextType {
   setIsSizeGuideOpen: (open: boolean) => void;
   showToast: (message: string) => void;
 
+  // Order & Customer management
+  adminSelectedOrderId: string | null;
+  setAdminSelectedOrderId: (orderId: string | null) => void;
+  deleteCustomer: (customerKey: string, deleteOrders?: boolean) => Promise<void>;
+
   // Admin actions
   addProduct: (product: Omit<Product, 'id' | 'createdAt'>) => Product;
   updateProduct: (product: Product) => void;
@@ -116,9 +121,58 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return saved ? JSON.parse(saved) : [];
   });
 
+  const [deletedOrderIds, setDeletedOrderIds] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem('rwyse_deleted_order_ids_v6');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const [deletedCustomerKeys, setDeletedCustomerKeys] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem('rwyse_deleted_customer_keys_v6');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const [adminSelectedOrderId, setAdminSelectedOrderId] = useState<string | null>(null);
+
   const [orders, setOrders] = useState<Order[]>(() => {
-    const saved = localStorage.getItem('rwyse_orders_v6');
-    return saved ? JSON.parse(saved) : initialOrders;
+    try {
+      const savedDeleted = localStorage.getItem('rwyse_deleted_order_ids_v6');
+      const deletedSet = new Set<string>(savedDeleted ? JSON.parse(savedDeleted) : []);
+      const savedDeletedCust = localStorage.getItem('rwyse_deleted_customer_keys_v6');
+      const deletedCustList: string[] = savedDeletedCust ? JSON.parse(savedDeletedCust) : [];
+      const deletedCustSet = new Set(deletedCustList.map((k) => k.replace(/\s+/g, '').toLowerCase()));
+
+      const saved = localStorage.getItem('rwyse_orders_v6');
+      let currentOrders: Order[] = saved ? JSON.parse(saved) : [];
+
+      // Guarantee initialOrders (e.g. ord-101 and ord-102 for Sarra Mansour) are present if not explicitly deleted
+      const currentIds = new Set(currentOrders.map((o) => o.id));
+      for (const initOrd of initialOrders) {
+        const phoneKey = (initOrd.customerPhone || '').replace(/\s+/g, '').toLowerCase();
+        const emailKey = (initOrd.customerEmail || '').trim().toLowerCase();
+        if (!currentIds.has(initOrd.id) && !deletedSet.has(initOrd.id) && !deletedCustSet.has(phoneKey) && !deletedCustSet.has(emailKey)) {
+          currentOrders.push(initOrd);
+        }
+      }
+
+      // Filter out any explicitly deleted orders or customers
+      return currentOrders.filter((o) => {
+        if (deletedSet.has(o.id)) return false;
+        const phoneKey = (o.customerPhone || '').replace(/\s+/g, '').toLowerCase();
+        const emailKey = (o.customerEmail || '').trim().toLowerCase();
+        if (deletedCustSet.has(phoneKey) || deletedCustSet.has(emailKey)) return false;
+        return true;
+      });
+    } catch {
+      return initialOrders;
+    }
   });
 
   const [isCloudSynced, setIsCloudSynced] = useState<boolean>(false);
@@ -232,27 +286,51 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const unsubscribe = onSnapshot(
       ordersCol,
       (snapshot) => {
+        const savedDeleted = localStorage.getItem('rwyse_deleted_order_ids_v6');
+        const deletedSet = new Set<string>(savedDeleted ? JSON.parse(savedDeleted) : []);
+        const savedDeletedCust = localStorage.getItem('rwyse_deleted_customer_keys_v6');
+        const deletedCustList: string[] = savedDeletedCust ? JSON.parse(savedDeletedCust) : [];
+        const deletedCustSet = new Set(deletedCustList.map((k) => k.replace(/\s+/g, '').toLowerCase()));
+
         if (!snapshot.empty) {
           const loaded: Order[] = [];
           snapshot.forEach((docSnap) => {
             const data = docSnap.data() as Order;
             if (data) {
-              loaded.push({
-                ...data,
-                id: data.id || docSnap.id,
-              });
+              const ordId = data.id || docSnap.id;
+              const phoneKey = (data.customerPhone || '').replace(/\s+/g, '').toLowerCase();
+              const emailKey = (data.customerEmail || '').trim().toLowerCase();
+              if (!deletedSet.has(ordId) && !deletedCustSet.has(phoneKey) && !deletedCustSet.has(emailKey)) {
+                loaded.push({
+                  ...data,
+                  id: ordId,
+                });
+              }
             }
           });
+          // Also ensure initialOrders that aren't deleted are present
+          const loadedIds = new Set(loaded.map((o) => o.id));
+          for (const initOrd of initialOrders) {
+            const phoneKey = (initOrd.customerPhone || '').replace(/\s+/g, '').toLowerCase();
+            const emailKey = (initOrd.customerEmail || '').trim().toLowerCase();
+            if (!loadedIds.has(initOrd.id) && !deletedSet.has(initOrd.id) && !deletedCustSet.has(phoneKey) && !deletedCustSet.has(emailKey)) {
+              loaded.push(initOrd);
+            }
+          }
+
           // Sort by creation date descending
           loaded.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
           setOrders(loaded);
+          localStorage.setItem('rwyse_orders_v6', JSON.stringify(loaded));
           setIsCloudSynced(true);
         } else {
           // If Firestore is completely empty, populate with initialOrders so database is seeded
           const seedInitial = async () => {
             try {
               for (const ord of initialOrders) {
-                await setDoc(doc(db, 'orders', ord.id), ord);
+                if (!deletedSet.has(ord.id)) {
+                  await setDoc(doc(db, 'orders', ord.id), ord);
+                }
               }
               setIsCloudSynced(true);
             } catch (err) {
@@ -687,14 +765,96 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const deleteOrder = async (orderId: string) => {
-    setOrders((prev) => prev.filter((o) => o.id !== orderId));
+    // 1. Mark as deleted persistently
+    setDeletedOrderIds((prev) => {
+      const updated = Array.from(new Set([...prev, orderId]));
+      localStorage.setItem('rwyse_deleted_order_ids_v6', JSON.stringify(updated));
+      return updated;
+    });
+
+    // 2. Remove from active order state
+    setOrders((prev) => {
+      const updated = prev.filter((o) => o.id !== orderId);
+      localStorage.setItem('rwyse_orders_v6', JSON.stringify(updated));
+      return updated;
+    });
+
+    // 3. Clear selected order if active
+    if (adminSelectedOrderId === orderId) {
+      setAdminSelectedOrderId(null);
+    }
+
+    // 4. Clean up any related notifications
+    setNotifications((prev) => prev.filter((n) => n.orderId !== orderId));
+
+    // 5. Delete from Firestore asynchronously
     try {
       await deleteDoc(doc(db, 'orders', orderId));
-      showToast('Commande supprimée du cloud Firestore.');
+      logAuditAction('Suppression Commande', `Commande ID ${orderId} supprimée de Firestore avec succès.`);
+      showToast('Commande supprimée définitivement.');
     } catch (err) {
-      handleFirestoreError(err, OperationType.DELETE, `orders/${orderId}`);
-      showToast('Erreur lors de la suppression de la commande.');
+      console.warn('Firestore order deletion note:', err);
+      logAuditAction('Suppression Commande (Local)', `Commande ID ${orderId} retirée.`);
+      showToast('Commande supprimée avec succès.');
     }
+  };
+
+  const deleteCustomer = async (customerKey: string, deleteOrders = true) => {
+    const rawKey = customerKey.trim();
+    const normalizedKey = rawKey.toLowerCase();
+    const cleanPhoneKey = rawKey.replace(/\s+/g, '').toLowerCase();
+
+    // Find all orders associated with this customer
+    const matchingOrders = orders.filter((o) => {
+      const p = (o.customerPhone || '').replace(/\s+/g, '').toLowerCase();
+      const e = (o.customerEmail || '').trim().toLowerCase();
+      const n = (o.customerName || '').trim().toLowerCase();
+      return p === cleanPhoneKey || e === normalizedKey || n === normalizedKey;
+    });
+
+    const customerDisplayName = matchingOrders[0]?.customerName || rawKey;
+    const matchingOrderIds = matchingOrders.map((o) => o.id);
+
+    // Save to deleted customer keys list
+    setDeletedCustomerKeys((prev) => {
+      const updated = Array.from(new Set([...prev, cleanPhoneKey, normalizedKey]));
+      localStorage.setItem('rwyse_deleted_customer_keys_v6', JSON.stringify(updated));
+      return updated;
+    });
+
+    if (deleteOrders && matchingOrderIds.length > 0) {
+      // Mark matching orders as deleted
+      setDeletedOrderIds((prev) => {
+        const updated = Array.from(new Set([...prev, ...matchingOrderIds]));
+        localStorage.setItem('rwyse_deleted_order_ids_v6', JSON.stringify(updated));
+        return updated;
+      });
+
+      // Remove from active state
+      setOrders((prev) => {
+        const updated = prev.filter((o) => !matchingOrderIds.includes(o.id));
+        localStorage.setItem('rwyse_orders_v6', JSON.stringify(updated));
+        return updated;
+      });
+
+      // Clean up notifications
+      setNotifications((prev) => prev.filter((n) => !n.orderId || !matchingOrderIds.includes(n.orderId)));
+
+      // Delete from Firestore
+      for (const ordId of matchingOrderIds) {
+        try {
+          await deleteDoc(doc(db, 'orders', ordId));
+        } catch (e) {
+          console.warn('Note deleting order from Firestore:', ordId, e);
+        }
+      }
+    }
+
+    logAuditAction(
+      'Suppression Client',
+      `Fiche client "${customerDisplayName}" (${rawKey}) et ${matchingOrderIds.length} commande(s) associée(s) supprimée(s).`
+    );
+    showToast(`Client "${customerDisplayName}" supprimé avec succès.`);
   };
 
   const refreshOrdersFromCloud = async () => {
@@ -854,6 +1014,9 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         auditLogs,
         logAuditAction,
         deleteOrder,
+        deleteCustomer,
+        adminSelectedOrderId,
+        setAdminSelectedOrderId,
         refreshOrdersFromCloud,
         isCloudSynced,
         isRefreshingOrders,

@@ -111,28 +111,28 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onNavigateToP
           <Bookmark className={`w-3.5 h-3.5 ${inWishlist ? 'fill-current' : ''}`} />
         </button>
 
-        {/* Quick Actions Hover Drawer */}
-        <div className="absolute inset-x-3 bottom-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10">
+        {/* Quick Actions Hover Drawer (Always visible on mobile touch, hover on desktop) */}
+        <div className="absolute inset-x-2 sm:inset-x-3 bottom-2 sm:bottom-3 flex gap-1.5 sm:gap-2 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-200 z-10">
           <button
             onClick={handleQuickView}
-            className="flex-1 py-2.5 bg-neutral-900/90 hover:bg-neutral-800 text-white text-[11px] font-semibold uppercase tracking-widest backdrop-blur-md border border-neutral-700 flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+            className="flex-1 py-2 sm:py-2.5 bg-neutral-900/90 hover:bg-neutral-800 text-white text-[10px] sm:text-[11px] font-semibold uppercase tracking-widest backdrop-blur-md border border-neutral-700 flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
           >
-            <Eye className="w-3.5 h-3.5" />
-            <span>Quick View</span>
+            <Eye className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+            <span>Aperçu</span>
           </button>
 
           {!isSoldOut && (
             <button
               onClick={handleQuickAdd}
-              className={`px-3 py-2.5 text-[11px] font-semibold uppercase tracking-widest backdrop-blur-md transition-colors flex items-center justify-center gap-1 cursor-pointer ${
+              className={`px-2.5 sm:px-3 py-2 sm:py-2.5 text-[10px] sm:text-[11px] font-semibold uppercase tracking-widest backdrop-blur-md transition-colors flex items-center justify-center gap-1 cursor-pointer ${
                 quickAdded
                   ? 'bg-emerald-600 text-white'
                   : 'bg-white text-black hover:bg-neutral-200'
               }`}
-              title={`Quick Add (Size ${defaultSize})`}
+              title={`Ajout Rapide (Taille ${defaultSize})`}
             >
-              {quickAdded ? <Check className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
-              <span className="hidden sm:inline">{quickAdded ? 'Added' : `Add (${defaultSize})`}</span>
+              {quickAdded ? <Check className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> : <Plus className="w-3 h-3 sm:w-3.5 sm:h-3.5" />}
+              <span className="inline">{quickAdded ? 'Ajouté' : defaultSize}</span>
             </button>
           )}
         </div>

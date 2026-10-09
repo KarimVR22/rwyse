@@ -162,6 +162,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onNavigate, onOrderP
                     <input
                       type="text"
                       required
+                      autoComplete="name"
                       placeholder="e.g. Yassine Ben Amor"
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
@@ -176,6 +177,8 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onNavigate, onOrderP
                       </label>
                       <input
                         type="tel"
+                        inputMode="tel"
+                        autoComplete="tel"
                         required
                         placeholder="+216 XX XXX XXX"
                         value={phone}
@@ -189,6 +192,8 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onNavigate, onOrderP
                       </label>
                       <input
                         type="email"
+                        inputMode="email"
+                        autoComplete="email"
                         placeholder="yourname@domain.tn"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
@@ -226,6 +231,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onNavigate, onOrderP
                       <input
                         type="text"
                         required
+                        autoComplete="street-address"
                         placeholder="e.g. Résidence Les Palmiers, Apt 4B, Les Berges du Lac"
                         value={address}
                         onChange={(e) => setAddress(e.target.value)}
@@ -239,6 +245,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onNavigate, onOrderP
                       <input
                         type="text"
                         required
+                        autoComplete="address-level2"
                         placeholder="e.g. Tunis"
                         value={city}
                         onChange={(e) => setCity(e.target.value)}
@@ -253,6 +260,8 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onNavigate, onOrderP
                     </label>
                     <input
                       type="text"
+                      inputMode="numeric"
+                      autoComplete="postal-code"
                       placeholder="e.g. 1053"
                       value={postalCode}
                       onChange={(e) => setPostalCode(e.target.value)}

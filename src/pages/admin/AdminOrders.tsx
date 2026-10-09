@@ -27,12 +27,29 @@ export const AdminOrders: React.FC = () => {
     isCloudSynced,
     isRefreshingOrders,
     siteSettings,
+    adminSelectedOrderId,
+    setAdminSelectedOrderId,
   } = useStore();
 
   const [filterStatus, setFilterStatus] = useState<string>('All');
   const [search, setSearch] = useState('');
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
-  const [deletingOrderId, setDeletingOrderId] = useState<string | null>(null);
+  const [orderToDelete, setOrderToDelete] = useState<Order | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  // Auto-open order if selected from notifications
+  React.useEffect(() => {
+    if (adminSelectedOrderId) {
+      const match = orders.find(
+        (o) => o.id === adminSelectedOrderId || o.orderNumber.toLowerCase() === adminSelectedOrderId.toLowerCase()
+      );
+      if (match) {
+        setSelectedOrder(match);
+        setFilterStatus('All');
+        setSearch('');
+      }
+    }
+  }, [adminSelectedOrderId, orders]);
 
   const statuses: Order['status'][] = [
     'Pending',
@@ -68,12 +85,20 @@ export const AdminOrders: React.FC = () => {
     return cleaned;
   };
 
-  const handleDelete = async (orderId: string) => {
-    if (window.confirm(`Êtes-vous sûr de vouloir supprimer définitivement cette commande ?`)) {
-      await deleteOrder(orderId);
-      if (selectedOrder?.id === orderId) {
+  const handleConfirmDelete = async () => {
+    if (!orderToDelete) return;
+    setIsDeleting(true);
+    try {
+      await deleteOrder(orderToDelete.id);
+      if (selectedOrder?.id === orderToDelete.id) {
         setSelectedOrder(null);
       }
+      if (adminSelectedOrderId === orderToDelete.id) {
+        setAdminSelectedOrderId(null);
+      }
+      setOrderToDelete(null);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -285,7 +310,7 @@ export const AdminOrders: React.FC = () => {
                         <Eye className="w-4 h-4" />
                       </button>
                       <button
-                        onClick={() => handleDelete(ord.id)}
+                        onClick={() => setOrderToDelete(ord)}
                         className="p-1.5 text-neutral-500 hover:text-red-400 hover:bg-neutral-800 transition-colors cursor-pointer rounded-xs"
                         title="Supprimer la commande"
                       >
@@ -470,11 +495,74 @@ export const AdminOrders: React.FC = () => {
               <div className="pt-2 flex justify-between items-center border-t border-neutral-800/80 text-xs text-neutral-500">
                 <span>Date de commande : {new Date(selectedOrder.createdAt).toLocaleString()}</span>
                 <button
-                  onClick={() => handleDelete(selectedOrder.id)}
-                  className="text-red-400 hover:text-red-300 inline-flex items-center gap-1 cursor-pointer font-mono"
+                  onClick={() => setOrderToDelete(selectedOrder)}
+                  className="text-red-400 hover:text-red-300 inline-flex items-center gap-1.5 cursor-pointer font-mono px-3 py-1.5 rounded-xs hover:bg-red-950/40 border border-transparent hover:border-red-900/60 transition-colors"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                   <span>Supprimer cette commande</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* In-App Order Deletion Confirmation Modal */}
+      {orderToDelete && (
+        <div className="fixed inset-0 z-60 overflow-y-auto">
+          <div
+            className="fixed inset-0 bg-black/85 backdrop-blur-sm"
+            onClick={() => !isDeleting && setOrderToDelete(null)}
+          />
+          <div className="min-h-full flex items-center justify-center p-4">
+            <div className="relative w-full max-w-md bg-[#141419] border border-red-900/50 text-neutral-100 shadow-2xl p-6 z-10 space-y-5 rounded-xs animate-in fade-in zoom-in-95 duration-150">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-full bg-red-950/80 border border-red-700/60 flex items-center justify-center shrink-0 text-red-400">
+                  <Trash2 className="w-5 h-5" />
+                </div>
+                <div className="space-y-1">
+                  <h3 className="text-base font-bold text-white uppercase tracking-tight">
+                    Supprimer la commande ?
+                  </h3>
+                  <p className="text-xs text-neutral-400 leading-relaxed">
+                    Cette action supprimera définitivement la commande{' '}
+                    <strong className="text-white font-mono">#{orderToDelete.orderNumber}</strong> de la base de données.
+                  </p>
+                </div>
+              </div>
+
+              <div className="p-3 bg-neutral-900/80 border border-neutral-800 text-xs space-y-1.5 font-mono">
+                <div className="flex justify-between text-neutral-400">
+                  <span>Client :</span>
+                  <span className="text-white font-semibold">{orderToDelete.customerName}</span>
+                </div>
+                <div className="flex justify-between text-neutral-400">
+                  <span>Téléphone :</span>
+                  <span className="text-white">{orderToDelete.customerPhone}</span>
+                </div>
+                <div className="flex justify-between text-neutral-400">
+                  <span>Montant :</span>
+                  <span className="text-emerald-400 font-bold">{orderToDelete.total.toFixed(2)} {siteSettings.currency}</span>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  disabled={isDeleting}
+                  onClick={() => setOrderToDelete(null)}
+                  className="px-4 py-2 text-xs font-semibold uppercase tracking-wider text-neutral-400 hover:text-white bg-neutral-900 border border-neutral-800 hover:border-neutral-700 cursor-pointer disabled:opacity-50"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="button"
+                  disabled={isDeleting}
+                  onClick={handleConfirmDelete}
+                  className="px-4 py-2 text-xs font-bold uppercase tracking-wider text-white bg-red-600 hover:bg-red-700 border border-red-500 shadow-lg cursor-pointer flex items-center gap-2 disabled:opacity-50"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>{isDeleting ? 'Suppression...' : 'Supprimer Définitivement'}</span>
                 </button>
               </div>
             </div>

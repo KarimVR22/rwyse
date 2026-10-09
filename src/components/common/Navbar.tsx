@@ -121,34 +121,82 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate, onOpenS
         </div>
       </div>
 
-      {/* Mobile Drawer Menu */}
+      {/* Mobile Backdrop & Drawer Menu */}
       {mobileMenuOpen && (
-        <div className="lg:hidden fixed inset-x-0 top-18 bg-[#0e0e12] border-b border-neutral-800 p-6 flex flex-col gap-6 shadow-2xl z-50 animate-in fade-in slide-in-from-top-4 duration-200">
-          <nav className="flex flex-col gap-4 text-sm font-medium tracking-[0.2em] uppercase text-neutral-300">
-            {navLinks.map((link) => (
+        <>
+          <div
+            className="fixed inset-0 top-18 bg-black/75 backdrop-blur-xs z-40 lg:hidden"
+            onClick={() => setMobileMenuOpen(false)}
+          />
+          <div className="lg:hidden fixed inset-x-0 top-18 bg-[#0e0e12] border-b border-neutral-800 p-6 flex flex-col gap-5 shadow-2xl z-50 animate-in fade-in slide-in-from-top-3 duration-200 max-h-[85vh] overflow-y-auto">
+            {/* Mobile Search input */}
+            {onOpenSearch && (
               <button
-                key={link.path}
-                onClick={() => handleLinkClick(link.path)}
-                className={`text-left py-2 border-b border-neutral-800/60 ${
-                  currentPath === link.path ? 'text-white font-bold' : 'text-neutral-400'
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  onOpenSearch();
+                }}
+                className="w-full flex items-center justify-between px-3.5 py-2.5 bg-neutral-900 border border-neutral-800 text-neutral-400 text-xs uppercase tracking-wider text-left cursor-pointer hover:border-neutral-600"
+              >
+                <span className="flex items-center gap-2">
+                  <Search className="w-3.5 h-3.5" />
+                  <span>Rechercher un modèle, hoodie, tee...</span>
+                </span>
+                <span className="text-[10px] font-mono text-neutral-500">Ctrl+K</span>
+              </button>
+            )}
+
+            <nav className="flex flex-col gap-1 text-xs font-medium tracking-[0.2em] uppercase text-neutral-300">
+              {navLinks.map((link) => (
+                <button
+                  key={link.path}
+                  onClick={() => handleLinkClick(link.path)}
+                  className={`text-left py-2.5 px-2 rounded-xs border-b border-neutral-800/40 flex items-center justify-between ${
+                    currentPath === link.path ? 'text-white font-bold bg-neutral-900/60' : 'text-neutral-400 hover:text-white'
+                  }`}
+                >
+                  <span>{link.label}</span>
+                  <span className="text-neutral-600 font-mono text-[10px]">→</span>
+                </button>
+              ))}
+
+              <button
+                onClick={() => handleLinkClick('/track')}
+                className={`text-left py-2.5 px-2 rounded-xs border-b border-neutral-800/40 flex items-center justify-between ${
+                  currentPath === '/track' ? 'text-white font-bold bg-neutral-900/60' : 'text-neutral-400 hover:text-white'
                 }`}
               >
-                {link.label}
+                <span className="flex items-center gap-2 text-emerald-400">
+                  <span>Suivre ma commande</span>
+                </span>
+                <span className="text-[10px] font-mono text-emerald-500">En direct</span>
               </button>
-            ))}
-            <button
-              onClick={() => handleLinkClick('/contact')}
-              className="text-left py-2 border-b border-neutral-800/60 text-neutral-400"
-            >
-              Contact Studio
-            </button>
-          </nav>
-          
-          <div className="pt-2 text-xs text-neutral-500 tracking-widest uppercase flex items-center justify-between">
-            <span>RWYSE Flagship</span>
-            <span>Rise with you</span>
+
+              <button
+                onClick={() => handleLinkClick('/account')}
+                className={`text-left py-2.5 px-2 rounded-xs border-b border-neutral-800/40 flex items-center justify-between ${
+                  currentPath === '/account' ? 'text-white font-bold bg-neutral-900/60' : 'text-neutral-400 hover:text-white'
+                }`}
+              >
+                <span>Mon Compte & Historique</span>
+                <span className="text-neutral-600 font-mono text-[10px]">→</span>
+              </button>
+
+              <button
+                onClick={() => handleLinkClick('/contact')}
+                className="text-left py-2.5 px-2 rounded-xs text-neutral-400 hover:text-white flex items-center justify-between"
+              >
+                <span>Contact Concierge & WhatsApp</span>
+                <span className="text-neutral-600 font-mono text-[10px]">→</span>
+              </button>
+            </nav>
+            
+            <div className="pt-2 border-t border-neutral-800/80 text-[10px] text-neutral-500 tracking-widest uppercase flex items-center justify-between font-mono">
+              <span>RWYSE Flagship TN</span>
+              <span>Paiement à la livraison</span>
+            </div>
           </div>
-        </div>
+        </>
       )}
     </header>
   );

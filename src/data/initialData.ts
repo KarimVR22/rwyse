@@ -421,6 +421,43 @@ export const initialOrders: Order[] = [
       { status: 'Delivered', title: 'Delivered', desc: 'Package handed to recipient with Cash on Delivery collected', date: 'Estimated: 2026-10-03', completed: false }
     ],
     createdAt: '2026-10-01T14:22:00Z',
+  },
+  {
+    id: 'ord-102',
+    orderNumber: 'RWY-84921',
+    customerName: 'Sarra Mansour',
+    customerEmail: 'sarra.mansour@example.tn',
+    customerPhone: '+216 52 341 890',
+    address: 'Résidence Port Kantaoui, Bloc C, Appt 14',
+    city: 'Sousse',
+    region: 'Sahel (Sousse, Monastir, Mahdia)',
+    postalCode: '4089',
+    notes: 'Livraison l’après-midi s’il vous plaît.',
+    items: [
+      {
+        productId: 'rwy-02',
+        name: 'RWYSE Club Heavyweight Raw Box Hoodie',
+        price: 165,
+        color: 'Onyx Mineral Black',
+        size: 'M',
+        quantity: 1,
+        image: hoodieImg,
+      }
+    ],
+    subtotal: 165,
+    deliveryFee: 7,
+    discountAmount: 0,
+    total: 172,
+    paymentMethod: 'cod',
+    status: 'Pending',
+    trackingSteps: [
+      { status: 'Pending', title: 'Commande Reçue', desc: 'Commande enregistrée dans le système RWYSE', date: 'Aujourd\'hui', completed: true },
+      { status: 'Confirmed', title: 'Confirmation Téléphonique', desc: 'Appel de vérification par le concierge RWYSE', date: 'En attente', completed: false },
+      { status: 'Preparing', title: 'Préparation & Emballage', desc: 'Conditionné dans l\'emballage noir mat RWYSE', date: 'En attente', completed: false },
+      { status: 'Shipped', title: 'Expédition Colis', desc: 'Prise en charge par le transporteur express', date: 'En attente', completed: false },
+      { status: 'Delivered', title: 'Livraison Réussie', desc: 'Remis en main propre contre paiement à la livraison', date: 'En attente', completed: false }
+    ],
+    createdAt: new Date().toISOString(),
   }
 ];
 

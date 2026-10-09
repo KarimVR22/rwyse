@@ -112,7 +112,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
   const relatedProducts = products.filter((p) => p.id !== product.id).slice(0, 4);
 
   return (
-    <div className="w-full bg-[#0b0b0d] text-white min-h-screen py-6 sm:py-12">
+    <div className="w-full bg-[#0b0b0d] text-white min-h-screen py-6 sm:py-12 pb-28 md:pb-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Breadcrumbs */}
@@ -496,6 +496,15 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
               >
                 Buy Now (Direct Checkout)
               </button>
+
+              <a
+                href={`https://wa.me/21652000000?text=${encodeURIComponent(`Bonjour RWYSE, je souhaite commander la pièce "${product.name}" (${priceToUse} ${siteSettings.currency}) en taille ${selectedSize || 'standard'}.`)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full py-3 text-xs font-semibold uppercase tracking-[0.2em] bg-emerald-950/60 hover:bg-emerald-900/80 text-emerald-300 border border-emerald-700/60 flex items-center justify-center gap-2 transition-all cursor-pointer rounded-xs"
+              >
+                <span>Commander via WhatsApp</span>
+              </a>
             </div>
 
             {/* Share & Trust badges */}
@@ -604,6 +613,47 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
           </div>
         )}
 
+      </div>
+
+      {/* Sticky Bottom Bar for Mobile Devices */}
+      <div className="md:hidden fixed bottom-0 inset-x-0 bg-[#0c0c0f]/95 backdrop-blur-md border-t border-neutral-800 p-3 z-40 shadow-2xl safe-area-inset-bottom">
+        <div className="flex items-center justify-between gap-3 max-w-lg mx-auto">
+          <div className="min-w-0 flex-1">
+            <span className="text-[11px] text-neutral-300 truncate font-medium block">{product.name}</span>
+            <div className="flex items-baseline gap-2">
+              <span className="text-sm font-mono font-bold text-white">
+                {priceToUse.toFixed(2)} {siteSettings.currency}
+              </span>
+              {selectedSize ? (
+                <span className="text-[10px] font-mono text-emerald-400 font-semibold uppercase">
+                  Taille : {selectedSize}
+                </span>
+              ) : (
+                <span className="text-[10px] text-amber-400">Choisir taille</span>
+              )}
+            </div>
+          </div>
+
+          <button
+            disabled={isOutOfStock}
+            onClick={() => {
+              const inStock = product.sizes.filter((s) => s.stock > 0);
+              if (!selectedSize && inStock.length > 0) {
+                setSelectedSize(inStock[0].size);
+                showToast(`Taille ${inStock[0].size} sélectionnée. Cliquez à nouveau pour ajouter au panier.`);
+              } else {
+                handleAddToCart();
+              }
+            }}
+            className={`px-5 py-3 text-xs font-bold uppercase tracking-wider transition-all cursor-pointer shadow-lg rounded-xs ${
+              isOutOfStock
+                ? 'bg-neutral-800 text-neutral-500 cursor-not-allowed'
+                : 'bg-white text-black hover:bg-neutral-200'
+            }`}
+          >
+            {isOutOfStock ? 'Épuisé' : !selectedSize ? 'Sélectionner' : 'Ajouter au Panier'}
+          </button>
+        </div>
       </div>
     </div>
   );
