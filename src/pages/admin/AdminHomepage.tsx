@@ -32,6 +32,21 @@ export const AdminHomepage: React.FC = () => {
   const [announcementText, setAnnouncementText] = useState(siteSettings.announcementText);
   const [announcementActive, setAnnouncementActive] = useState(siteSettings.announcementActive);
 
+  React.useEffect(() => {
+    setHeroTitle(siteSettings.heroTitle);
+    setHeroSubtitle(siteSettings.heroSubtitle);
+    setHeroCtaText(siteSettings.heroCtaText);
+    setHeroCtaLink(siteSettings.heroCtaLink);
+    setHeroSecondaryCtaText(siteSettings.heroSecondaryCtaText);
+    setHeroSecondaryCtaLink(siteSettings.heroSecondaryCtaLink);
+    setHeroImage(siteSettings.heroImage);
+    setIsNewDropActive(siteSettings.isNewDropActive);
+    setIsCommunityActive(siteSettings.isCommunityActive);
+    setIsInstagramActive(siteSettings.isInstagramActive);
+    setAnnouncementText(siteSettings.announcementText);
+    setAnnouncementActive(siteSettings.announcementActive);
+  }, [siteSettings]);
+
   const handleSaveAll = (e: React.FormEvent) => {
     e.preventDefault();
     updateSiteSettings({

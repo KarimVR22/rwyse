@@ -41,6 +41,19 @@ export const AdminMediaManager: React.FC = () => {
   const [lookbookImage4, setLookbookImage4] = useState(siteSettings.lookbookImage4 || heroImg);
   const [editorialImage, setEditorialImage] = useState(siteSettings.editorialImage || editorialImg);
 
+  React.useEffect(() => {
+    if (siteSettings.heroImage) setHeroImage(siteSettings.heroImage);
+    if (siteSettings.spotlightImage1) setSpotlightImage1(siteSettings.spotlightImage1);
+    if (siteSettings.spotlightImage2) setSpotlightImage2(siteSettings.spotlightImage2);
+    if (siteSettings.communityImage1) setCommunityImage1(siteSettings.communityImage1);
+    if (siteSettings.communityImage2) setCommunityImage2(siteSettings.communityImage2);
+    if (siteSettings.lookbookImage1) setLookbookImage1(siteSettings.lookbookImage1);
+    if (siteSettings.lookbookImage2) setLookbookImage2(siteSettings.lookbookImage2);
+    if (siteSettings.lookbookImage3) setLookbookImage3(siteSettings.lookbookImage3);
+    if (siteSettings.lookbookImage4) setLookbookImage4(siteSettings.lookbookImage4);
+    if (siteSettings.editorialImage) setEditorialImage(siteSettings.editorialImage);
+  }, [siteSettings]);
+
   const [activeTab, setActiveTab] = useState<'hero' | 'spotlight' | 'lookbook' | 'community' | 'editorial' | 'library'>('hero');
 
   // Custom uploaded images in media library

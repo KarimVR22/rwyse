@@ -17,6 +17,8 @@ import {
   CheckCircle,
   ShieldAlert,
   Image as ImageIcon,
+  Cloud,
+  RefreshCw,
 } from 'lucide-react';
 import { useStore } from '../../context/StoreContext';
 import { RwyseLogo } from '../../components/common/RwyseLogo';
@@ -51,7 +53,16 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
   onLogout,
   children,
 }) => {
-  const { orders, notifications, markNotificationRead, clearNotifications, setAdminSelectedOrderId } = useStore();
+  const {
+    orders,
+    notifications,
+    markNotificationRead,
+    clearNotifications,
+    setAdminSelectedOrderId,
+    isCloudSynced,
+    syncAllProductsToCloud,
+    isSyncingCatalog,
+  } = useStore();
   const [showNotifications, setShowNotifications] = React.useState(false);
 
   const unreadCount = notifications.filter((n) => !n.read).length;
@@ -89,6 +100,10 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
             <span className="text-[10px] uppercase font-mono tracking-widest px-2 py-0.5 bg-neutral-800 text-neutral-300 rounded-xs">
               Command Suite
             </span>
+            <div className="hidden sm:flex items-center gap-1.5 px-2 py-0.5 bg-emerald-950/70 border border-emerald-800 rounded-xs text-[10px] font-mono text-emerald-400">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span>Synchro Cloud Live Active</span>
+            </div>
           </div>
         </div>
 
@@ -169,6 +184,21 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
               </div>
             )}
           </div>
+
+          {/* Quick Synchro Cloud */}
+          <button
+            onClick={syncAllProductsToCloud}
+            disabled={isSyncingCatalog}
+            title="Pousser l'ensemble des données (prix, photos, paramètres) vers le Cloud pour tous les clients"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold uppercase tracking-wider text-emerald-400 hover:text-emerald-300 border border-emerald-800/80 hover:border-emerald-600 bg-emerald-950/40 transition-colors cursor-pointer disabled:opacity-50"
+          >
+            {isSyncingCatalog ? (
+              <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <Cloud className="w-3.5 h-3.5" />
+            )}
+            <span className="hidden sm:inline">{isSyncingCatalog ? 'Sync...' : 'Synchro Cloud'}</span>
+          </button>
 
           {/* View Customer Storefront */}
           <button

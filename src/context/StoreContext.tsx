@@ -32,6 +32,7 @@ import {
   handleFirestoreError,
   OperationType,
 } from '../firebase';
+import { compressImageIfNeeded } from '../utils/imageCompressor';
 
 interface StoreContextType {
   products: Product[];
@@ -52,6 +53,7 @@ interface StoreContextType {
   toast: string | null;
   isCloudSynced: boolean;
   isRefreshingOrders: boolean;
+  isSyncingCatalog: boolean;
 
   // Storefront actions
   addToCart: (product: Product, color: string, size: string, quantity?: number) => void;
@@ -95,6 +97,7 @@ interface StoreContextType {
   markNotificationRead: (id: string) => void;
   clearNotifications: () => void;
   logAuditAction: (action: string, details: string, adminEmail?: string) => void;
+  syncAllProductsToCloud: () => Promise<void>;
 }
 
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
@@ -121,6 +124,15 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return saved ? JSON.parse(saved) : [];
   });
 
+  const [deletedProductIds, setDeletedProductIds] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem('rwyse_deleted_product_ids_v6');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
   const [deletedOrderIds, setDeletedOrderIds] = useState<string[]>(() => {
     try {
       const saved = localStorage.getItem('rwyse_deleted_order_ids_v6');
@@ -139,6 +151,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   });
 
+  const [isSyncingCatalog, setIsSyncingCatalog] = useState<boolean>(false);
   const [adminSelectedOrderId, setAdminSelectedOrderId] = useState<string | null>(null);
 
   const [orders, setOrders] = useState<Order[]>(() => {
@@ -365,6 +378,147 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     localStorage.setItem('rwyse_settings_v6', JSON.stringify(siteSettings));
   }, [siteSettings]);
 
+  // Real-time Firestore sync for Products (Instant live synchronization with all clients)
+  useEffect(() => {
+    const productsCol = collection(db, 'products');
+    const unsubscribe = onSnapshot(
+      productsCol,
+      (snapshot) => {
+        const savedDeleted = localStorage.getItem('rwyse_deleted_product_ids_v6');
+        const deletedSet = new Set<string>(savedDeleted ? JSON.parse(savedDeleted) : []);
+
+        if (!snapshot.empty) {
+          const loaded: Product[] = [];
+          snapshot.forEach((docSnap) => {
+            const data = docSnap.data() as Product;
+            if (data && data.name) {
+              const pId = data.id || docSnap.id;
+              if (!deletedSet.has(pId)) {
+                loaded.push({
+                  ...data,
+                  id: pId,
+                });
+              }
+            }
+          });
+
+          if (loaded.length > 0) {
+            setProducts(loaded);
+            localStorage.setItem('rwyse_products_v6', JSON.stringify(loaded));
+            setIsCloudSynced(true);
+          }
+        } else {
+          // If Firestore 'products' collection is completely empty, seed it with catalog so all external clients get it
+          const seedProducts = async () => {
+            try {
+              const saved = localStorage.getItem('rwyse_products_v6');
+              const toSeed: Product[] = saved ? JSON.parse(saved) : initialProducts;
+              for (const p of toSeed) {
+                if (!deletedSet.has(p.id)) {
+                  await setDoc(doc(db, 'products', p.id), p);
+                }
+              }
+              setIsCloudSynced(true);
+            } catch (err) {
+              console.warn('Seeding products note:', err);
+            }
+          };
+          seedProducts();
+        }
+      },
+      (error) => {
+        handleFirestoreError(error, OperationType.GET, 'products');
+        setIsCloudSynced(false);
+      }
+    );
+
+    return () => unsubscribe();
+  }, []);
+
+  // Real-time Firestore sync for Delivery Zones
+  useEffect(() => {
+    const zonesCol = collection(db, 'deliveryZones');
+    const unsubscribe = onSnapshot(
+      zonesCol,
+      (snapshot) => {
+        if (!snapshot.empty) {
+          const loaded: DeliveryZone[] = [];
+          snapshot.forEach((docSnap) => {
+            const data = docSnap.data() as DeliveryZone;
+            if (data && data.region) {
+              loaded.push({ ...data, id: data.id || docSnap.id });
+            }
+          });
+          setDeliveryZones(loaded);
+          localStorage.setItem('rwyse_delivery_zones_v6', JSON.stringify(loaded));
+        } else {
+          for (const zone of initialDeliveryZones) {
+            setDoc(doc(db, 'deliveryZones', zone.id), zone).catch(() => {});
+          }
+        }
+      },
+      (error) => console.warn('Delivery zones listener note:', error)
+    );
+
+    return () => unsubscribe();
+  }, []);
+
+  // Real-time Firestore sync for Promotions
+  useEffect(() => {
+    const promoCol = collection(db, 'promotions');
+    const unsubscribe = onSnapshot(
+      promoCol,
+      (snapshot) => {
+        if (!snapshot.empty) {
+          const loaded: Promotion[] = [];
+          snapshot.forEach((docSnap) => {
+            const data = docSnap.data() as Promotion;
+            if (data && data.code) {
+              loaded.push({ ...data, id: data.id || docSnap.id });
+            }
+          });
+          setPromotions(loaded);
+          localStorage.setItem('rwyse_promotions_v6', JSON.stringify(loaded));
+        } else {
+          for (const promo of initialPromotions) {
+            setDoc(doc(db, 'promotions', promo.id), promo).catch(() => {});
+          }
+        }
+      },
+      (error) => console.warn('Promotions listener note:', error)
+    );
+
+    return () => unsubscribe();
+  }, []);
+
+  // Real-time Firestore sync for Advertisements
+  useEffect(() => {
+    const adsCol = collection(db, 'advertisements');
+    const unsubscribe = onSnapshot(
+      adsCol,
+      (snapshot) => {
+        if (!snapshot.empty) {
+          const loaded: Advertisement[] = [];
+          snapshot.forEach((docSnap) => {
+            const data = docSnap.data() as Advertisement;
+            if (data && data.title) {
+              loaded.push({ ...data, id: data.id || docSnap.id });
+            }
+          });
+          setAdvertisements(loaded);
+          localStorage.setItem('rwyse_advertisements_v6', JSON.stringify(loaded));
+        } else {
+          for (const ad of initialAdvertisements) {
+            setDoc(doc(db, 'advertisements', ad.id), ad).catch(() => {});
+          }
+        }
+      },
+      (error) => console.warn('Advertisements listener note:', error)
+    );
+
+    return () => unsubscribe();
+  }, []);
+
   // Real-time Firestore sync for Site Settings (Hero, Spotlights, Lookbook & CMS Images)
   useEffect(() => {
     const settingsDoc = doc(db, 'settings', 'global');
@@ -375,7 +529,10 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           const remoteSettings = docSnap.data() as Partial<SiteSettings>;
           if (remoteSettings && Object.keys(remoteSettings).length > 0) {
             setSiteSettings((prev) => ({ ...prev, ...remoteSettings }));
+            localStorage.setItem('rwyse_settings_v6', JSON.stringify({ ...initialSiteSettings, ...remoteSettings }));
           }
+        } else {
+          setDoc(doc(db, 'settings', 'global'), initialSiteSettings).catch(() => {});
         }
       },
       (error) => {
@@ -625,7 +782,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     );
   };
 
-  // Admin Product Actions
+  // Admin Product Actions (Fully Synchronized Live with Firestore for All Devices)
   const addProduct = (productInput: Omit<Product, 'id' | 'createdAt'>): Product => {
     const newId = `rwy-${Date.now().toString().slice(-4)}`;
     const newProduct: Product = {
@@ -633,19 +790,90 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       id: newId,
       createdAt: new Date().toISOString(),
     };
+
+    // Instant local state update
     setProducts((prev) => [newProduct, ...prev]);
-    showToast(`Added product "${newProduct.name}" to catalog.`);
+    showToast(`Produit "${newProduct.name}" ajouté et synchronisé en direct !`);
+
+    // Async persistent sync to Firestore
+    (async () => {
+      try {
+        const sanitizedColors = await Promise.all(
+          (newProduct.colors || []).map(async (c) => {
+            const compressedImages = await Promise.all(
+              (c.images || []).map((img) => compressImageIfNeeded(img))
+            );
+            return {
+              ...c,
+              images: compressedImages,
+            };
+          })
+        );
+        const toSave: Product = {
+          ...newProduct,
+          colors: sanitizedColors,
+        };
+        await setDoc(doc(db, 'products', toSave.id), toSave);
+        console.log('Product persisted to Firestore:', toSave.id);
+      } catch (err) {
+        console.error('Firestore addProduct error:', err);
+        handleFirestoreError(err, OperationType.CREATE, `products/${newProduct.id}`);
+      }
+    })();
+
     return newProduct;
   };
 
-  const updateProduct = (updated: Product) => {
+  const updateProduct = async (updated: Product) => {
+    // 1. Instant optimistic update
     setProducts((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
-    showToast(`Updated product "${updated.name}".`);
+    showToast(`Produit "${updated.name}" mis à jour en direct pour tous les clients !`);
+
+    // 2. Persist to Firestore with compressed images
+    try {
+      const sanitizedColors = await Promise.all(
+        (updated.colors || []).map(async (c) => {
+          const compressedImages = await Promise.all(
+            (c.images || []).map((img) => compressImageIfNeeded(img))
+          );
+          return {
+            ...c,
+            images: compressedImages,
+          };
+        })
+      );
+      const toSave: Product = {
+        ...updated,
+        colors: sanitizedColors,
+      };
+      await setDoc(doc(db, 'products', toSave.id), toSave, { merge: true });
+      console.log('Product update persisted to Firestore:', toSave.id);
+    } catch (err) {
+      console.error('Firestore updateProduct error:', err);
+      handleFirestoreError(err, OperationType.UPDATE, `products/${updated.id}`);
+    }
   };
 
-  const deleteProduct = (id: string) => {
+  const deleteProduct = async (id: string) => {
+    // 1. Mark as deleted persistently
+    setDeletedProductIds((prev) => {
+      const updated = Array.from(new Set([...prev, id]));
+      localStorage.setItem('rwyse_deleted_product_ids_v6', JSON.stringify(updated));
+      return updated;
+    });
+
+    // 2. Instant local removal
     setProducts((prev) => prev.filter((p) => p.id !== id));
-    showToast('Product removed from catalog.');
+    showToast('Produit retiré du catalogue en direct.');
+
+    // 3. Delete from Firestore
+    try {
+      await deleteDoc(doc(db, 'products', id));
+      console.log('Product deleted from Firestore:', id);
+    } catch (err) {
+      console.warn('Firestore deleteProduct error:', err);
+      handleFirestoreError(err, OperationType.DELETE, `products/${id}`);
+    }
   };
 
   const duplicateProduct = (id: string) => {
@@ -662,18 +890,44 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     };
 
     setProducts((prev) => [duplicated, ...prev]);
-    showToast(`Duplicated product "${target.name}".`);
+    showToast(`Dupliqué : "${target.name}". Synchronisé.`);
+
+    (async () => {
+      try {
+        await setDoc(doc(db, 'products', duplicated.id), duplicated);
+      } catch (e) {
+        console.warn('Duplicate product firestore error:', e);
+      }
+    })();
+
     return duplicated;
   };
 
-  const updateProductPrice = (id: string, price: number, salePrice?: number) => {
+  const updateProductPrice = async (id: string, price: number, salePrice?: number) => {
+    let updatedObj: Product | undefined;
     setProducts((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, price, salePrice } : p))
+      prev.map((p) => {
+        if (p.id === id) {
+          const upd = { ...p, price, salePrice };
+          updatedObj = upd;
+          return upd;
+        }
+        return p;
+      })
     );
-    showToast('Price updated successfully.');
+    showToast('Prix mis à jour en direct pour tous les clients !');
+
+    if (updatedObj) {
+      try {
+        await setDoc(doc(db, 'products', id), updatedObj, { merge: true });
+      } catch (err) {
+        console.warn('Update price firestore note:', err);
+      }
+    }
   };
 
-  const updateInventoryStock = (productId: string, sizeName: string, newStock: number) => {
+  const updateInventoryStock = async (productId: string, sizeName: string, newStock: number) => {
+    let updatedObj: Product | undefined;
     setProducts((prev) =>
       prev.map((p) => {
         if (p.id !== productId) return p;
@@ -681,14 +935,56 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           s.size === sizeName ? { ...s, stock: Math.max(0, newStock) } : s
         );
         const totalStock = updatedSizes.reduce((sum, s) => sum + s.stock, 0);
-        return {
+        const upd = {
           ...p,
           sizes: updatedSizes,
           isSoldOut: totalStock === 0,
         };
+        updatedObj = upd;
+        return upd;
       })
     );
-    showToast('Inventory stock updated.');
+    showToast('Stock inventaire mis à jour en direct.');
+
+    if (updatedObj) {
+      try {
+        await setDoc(doc(db, 'products', productId), updatedObj, { merge: true });
+      } catch (err) {
+        console.warn('Update stock firestore note:', err);
+      }
+    }
+  };
+
+  // Full manual push of all catalog products to Firestore cloud
+  const syncAllProductsToCloud = async () => {
+    setIsSyncingCatalog(true);
+    try {
+      for (const prod of products) {
+        const sanitizedColors = await Promise.all(
+          (prod.colors || []).map(async (c) => {
+            const compressedImages = await Promise.all(
+              (c.images || []).map((img) => compressImageIfNeeded(img))
+            );
+            return {
+              ...c,
+              images: compressedImages,
+            };
+          })
+        );
+        const toSave: Product = {
+          ...prod,
+          colors: sanitizedColors,
+        };
+        await setDoc(doc(db, 'products', toSave.id), toSave, { merge: true });
+      }
+      setIsCloudSynced(true);
+      showToast(`Catalogue entier (${products.length} articles) synchronisé avec succès sur le Cloud Firestore !`);
+    } catch (err) {
+      handleFirestoreError(err, OperationType.WRITE, 'products');
+      showToast('Erreur de synchronisation Cloud.');
+    } finally {
+      setIsSyncingCatalog(false);
+    }
   };
 
   // Admin Order Actions
@@ -885,68 +1181,117 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   // Delivery Zones
-  const updateDeliveryZone = (zone: DeliveryZone) => {
+  const updateDeliveryZone = async (zone: DeliveryZone) => {
     setDeliveryZones((prev) =>
       prev.map((z) => (z.id === zone.id ? zone : z))
     );
-    showToast(`Delivery zone "${zone.region}" updated.`);
+    showToast(`Zone de livraison "${zone.region}" mise à jour en direct.`);
+    try {
+      await setDoc(doc(db, 'deliveryZones', zone.id), zone, { merge: true });
+    } catch (e) {
+      console.warn('Delivery zone firestore error:', e);
+    }
   };
 
   // Promotions CRUD
-  const addPromotion = (promoInput: Omit<Promotion, 'id' | 'currentUses'>) => {
+  const addPromotion = async (promoInput: Omit<Promotion, 'id' | 'currentUses'>) => {
     const newPromo: Promotion = {
       ...promoInput,
       id: `promo-${Date.now()}`,
       currentUses: 0,
     };
     setPromotions((prev) => [newPromo, ...prev]);
-    showToast(`Created promotion code "${newPromo.code}".`);
+    showToast(`Code promo "${newPromo.code}" créé et synchronisé.`);
+    try {
+      await setDoc(doc(db, 'promotions', newPromo.id), newPromo);
+    } catch (e) {
+      console.warn('Add promo firestore error:', e);
+    }
   };
 
-  const updatePromotion = (updated: Promotion) => {
+  const updatePromotion = async (updated: Promotion) => {
     setPromotions((prev) =>
       prev.map((p) => (p.id === updated.id ? updated : p))
     );
-    showToast(`Promotion "${updated.code}" updated.`);
+    showToast(`Code promo "${updated.code}" mis à jour en direct.`);
+    try {
+      await setDoc(doc(db, 'promotions', updated.id), updated, { merge: true });
+    } catch (e) {
+      console.warn('Update promo firestore error:', e);
+    }
   };
 
-  const deletePromotion = (id: string) => {
+  const deletePromotion = async (id: string) => {
     setPromotions((prev) => prev.filter((p) => p.id !== id));
-    showToast('Promotion code deleted.');
+    showToast('Code promo supprimé.');
+    try {
+      await deleteDoc(doc(db, 'promotions', id));
+    } catch (e) {
+      console.warn('Delete promo firestore error:', e);
+    }
   };
 
   // Advertisements CRUD
-  const addAdvertisement = (adInput: Omit<Advertisement, 'id'>) => {
+  const addAdvertisement = async (adInput: Omit<Advertisement, 'id'>) => {
     const newAd: Advertisement = {
       ...adInput,
       id: `ad-${Date.now()}`,
     };
     setAdvertisements((prev) => [newAd, ...prev]);
-    showToast('Advertisement created.');
+    showToast('Campagne publicitaire créée.');
+    try {
+      const compressedImage = await compressImageIfNeeded(newAd.image);
+      const toSave = { ...newAd, image: compressedImage };
+      await setDoc(doc(db, 'advertisements', toSave.id), toSave);
+    } catch (e) {
+      console.warn('Add ad firestore error:', e);
+    }
   };
 
-  const updateAdvertisement = (updated: Advertisement) => {
+  const updateAdvertisement = async (updated: Advertisement) => {
     setAdvertisements((prev) =>
       prev.map((a) => (a.id === updated.id ? updated : a))
     );
-    showToast('Advertisement updated.');
+    showToast('Campagne publicitaire mise à jour.');
+    try {
+      const compressedImage = await compressImageIfNeeded(updated.image);
+      const toSave = { ...updated, image: compressedImage };
+      await setDoc(doc(db, 'advertisements', toSave.id), toSave, { merge: true });
+    } catch (e) {
+      console.warn('Update ad firestore error:', e);
+    }
   };
 
-  const deleteAdvertisement = (id: string) => {
+  const deleteAdvertisement = async (id: string) => {
     setAdvertisements((prev) => prev.filter((a) => a.id !== id));
-    showToast('Advertisement deleted.');
+    showToast('Campagne publicitaire supprimée.');
+    try {
+      await deleteDoc(doc(db, 'advertisements', id));
+    } catch (e) {
+      console.warn('Delete ad firestore error:', e);
+    }
   };
 
-  // Site Settings
+  // Site Settings (Hero, Spotlights, Lookbook & CMS Images)
   const updateSiteSettings = async (settings: Partial<SiteSettings>) => {
     const updated = { ...siteSettings, ...settings };
     setSiteSettings(updated);
     localStorage.setItem('rwyse_settings_v6', JSON.stringify(updated));
-    showToast('Paramètres et images enregistrés !');
+    showToast('Paramètres et images enregistrés en direct pour tous les clients !');
+
     try {
-      await setDoc(doc(db, 'settings', 'global'), updated);
+      const sanitized: Record<string, any> = { ...updated };
+      for (const key of Object.keys(sanitized)) {
+        const val = sanitized[key];
+        if (typeof val === 'string' && val.startsWith('data:image/')) {
+          sanitized[key] = await compressImageIfNeeded(val);
+        }
+      }
+      await setDoc(doc(db, 'settings', 'global'), sanitized, { merge: true });
+      console.log('Site settings synced to Firestore settings/global');
     } catch (err) {
       console.warn('Could not save settings to Firestore:', err);
+      handleFirestoreError(err, OperationType.WRITE, 'settings/global');
     }
   };
 
@@ -1020,6 +1365,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         refreshOrdersFromCloud,
         isCloudSynced,
         isRefreshingOrders,
+        syncAllProductsToCloud,
+        isSyncingCatalog,
       }}
     >
       {children}

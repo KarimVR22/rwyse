@@ -42,6 +42,17 @@ service cloud.firestore {
       allow write: if true;
     }
 
+    match /settings/{settingId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // Promotions: readable by everyone
+    match /promotions/{promoId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
     // Audit logs: accessible by admin
     match /auditLogs/{logId} {
       allow read, write: if true;

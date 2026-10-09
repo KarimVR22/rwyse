@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useStore } from '../../context/StoreContext';
 import { Product, ProductCategory } from '../../types';
-import { Plus, Search, Edit3, Copy, Trash2, X, Check, Eye, RotateCcw, AlertTriangle } from 'lucide-react';
+import { Plus, Search, Edit3, Copy, Trash2, X, Check, Eye, RotateCcw, AlertTriangle, Cloud, RefreshCw } from 'lucide-react';
 import { hoodieImg } from '../../data/initialData';
 
 export const AdminProducts: React.FC = () => {
@@ -13,6 +13,9 @@ export const AdminProducts: React.FC = () => {
     duplicateProduct,
     siteSettings,
     logAuditAction,
+    syncAllProductsToCloud,
+    isSyncingCatalog,
+    isCloudSynced,
   } = useStore();
 
   const [search, setSearch] = useState('');
@@ -244,15 +247,37 @@ export const AdminProducts: React.FC = () => {
           <h1 className="text-2xl sm:text-3xl font-display font-extrabold uppercase text-white tracking-tight">
             Product Archive
           </h1>
+          <div className="flex items-center gap-2 mt-1">
+            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-xs bg-emerald-950/80 border border-emerald-800 text-[10px] font-mono text-emerald-400">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span>Synchro Cloud Live Active (Visible par tous les clients externes)</span>
+            </span>
+          </div>
         </div>
 
-        <button
-          onClick={handleOpenAdd}
-          className="px-5 py-2.5 bg-white text-black text-xs font-bold uppercase tracking-wider hover:bg-neutral-200 transition-colors flex items-center gap-2 cursor-pointer shadow-lg"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Add New Piece</span>
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={syncAllProductsToCloud}
+            disabled={isSyncingCatalog}
+            title="Pousser l'ensemble du catalogue et photos sur Firestore pour tous les visiteurs"
+            className="px-4 py-2.5 bg-neutral-900 border border-neutral-700 hover:border-neutral-500 text-neutral-200 text-xs font-semibold uppercase tracking-wider hover:text-white transition-colors flex items-center gap-2 cursor-pointer disabled:opacity-50"
+          >
+            {isSyncingCatalog ? (
+              <RefreshCw className="w-4 h-4 animate-spin text-amber-400" />
+            ) : (
+              <Cloud className="w-4 h-4 text-emerald-400" />
+            )}
+            <span>{isSyncingCatalog ? 'Synchronisation...' : 'Pousser vers le Cloud'}</span>
+          </button>
+
+          <button
+            onClick={handleOpenAdd}
+            className="px-5 py-2.5 bg-white text-black text-xs font-bold uppercase tracking-wider hover:bg-neutral-200 transition-colors flex items-center gap-2 cursor-pointer shadow-lg"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Add New Piece</span>
+          </button>
+        </div>
       </div>
 
       {/* Toolbar */}
