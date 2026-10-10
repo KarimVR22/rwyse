@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useStore } from '../../context/StoreContext';
 import { X, Plus, Minus, ArrowRight, Ruler, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { resolveProductImage } from '../../utils/imageResolver';
+import { hoodieImg } from '../../data/initialData';
 
 interface QuickViewModalProps {
   onNavigateToProduct: (slug: string) => void;
@@ -22,8 +24,9 @@ export const QuickViewModal: React.FC<QuickViewModalProps> = ({ onNavigateToProd
   const [selectedImgIdx, setSelectedImgIdx] = useState(0);
 
   const activeColor = quickViewProduct ? quickViewProduct.colors[selectedColorIdx] || quickViewProduct.colors[0] : null;
-  const images = activeColor ? (activeColor.images.length > 0 ? activeColor.images : quickViewProduct?.colors[0]?.images || []) : [];
-  const currentImg = images[selectedImgIdx] || images[0];
+  const rawImages = activeColor ? (activeColor.images.length > 0 ? activeColor.images : quickViewProduct?.colors[0]?.images || []) : [];
+  const images = rawImages.map((img) => resolveProductImage(img));
+  const currentImg = images[selectedImgIdx] || images[0] || hoodieImg;
 
   const currentSizeObj = quickViewProduct?.sizes.find((s) => s.size === selectedSize);
   const isOutOfStock = currentSizeObj ? currentSizeObj.stock === 0 : false;

@@ -4,6 +4,8 @@ import { useStore } from '../context/StoreContext';
 import { ProductCard } from '../components/common/ProductCard';
 import { Product360Viewer } from '../components/common/Product360Viewer';
 import { Ruler, ShieldCheck, Truck, RotateCcw, Plus, Minus, Check, ArrowRight, Share2, Bookmark, Image as ImageIcon } from 'lucide-react';
+import { resolveProductImage } from '../utils/imageResolver';
+import { hoodieImg } from '../data/initialData';
 
 interface ProductDetailPageProps {
   slug: string;
@@ -74,8 +76,9 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
   }
 
   const activeColor = product.colors[selectedColorIdx] || product.colors[0];
-  const images = activeColor.images.length > 0 ? activeColor.images : product.colors[0]?.images || [];
-  const currentImage = images[selectedImageIdx] || images[0];
+  const rawImages = activeColor?.images?.length ? activeColor.images : product.colors[0]?.images || [];
+  const images = rawImages.map((img) => resolveProductImage(img));
+  const currentImage = images[selectedImageIdx] || images[0] || hoodieImg;
 
   const currentSizeObj = product.sizes.find((s) => s.size === selectedSize);
   const isOutOfStock = currentSizeObj ? currentSizeObj.stock === 0 : false;

@@ -20,9 +20,11 @@ import {
   Image as ImageIcon,
   Sparkles,
   CheckCircle,
+  Camera,
 } from 'lucide-react';
 import { hoodieImg } from '../../data/initialData';
 import { compressImageIfNeeded } from '../../utils/imageCompressor';
+import { resolveProductImage } from '../../utils/imageResolver';
 
 export const AdminProducts: React.FC = () => {
   const {
@@ -56,8 +58,10 @@ export const AdminProducts: React.FC = () => {
   const [isCompressingFormImage, setIsCompressingFormImage] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
   const bulkFileInputRef = useRef<HTMLInputElement>(null);
+  const [showUrlManualInput, setShowUrlManualInput] = useState(false);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -384,6 +388,7 @@ export const AdminProducts: React.FC = () => {
       stockXXL: 4,
     });
     setEditingProduct(null);
+    setShowUrlManualInput(false);
     setActiveModalTab('info');
     setIsAddModalOpen(true);
   };
@@ -394,6 +399,9 @@ export const AdminProducts: React.FC = () => {
     const lStock = p.sizes.find((s) => s.size === 'L')?.stock ?? 0;
     const xlStock = p.sizes.find((s) => s.size === 'XL')?.stock ?? 0;
     const xxlStock = p.sizes.find((s) => s.size === 'XXL')?.stock ?? 0;
+
+    const mainImg = resolveProductImage(p.colors[0]?.images[0]) || hoodieImg;
+    const extraImgs = (p.colors[0]?.images.slice(1) || []).map((img) => resolveProductImage(img));
 
     setFormData({
       name: p.name,
@@ -413,8 +421,8 @@ export const AdminProducts: React.FC = () => {
       status: p.status || 'published',
       colorName: p.colors[0]?.name || 'Standard',
       colorHex: p.colors[0]?.hex || '#111111',
-      imageUrl: p.colors[0]?.images[0] || hoodieImg,
-      additionalImages: p.colors[0]?.images.slice(1) || [],
+      imageUrl: mainImg,
+      additionalImages: extraImgs,
       threeDModelUrl: p.threeDModelUrl || '',
       threeSixtyFramesInput: p.threeSixtyFrames?.join('\n') || '',
       stockS: sStock,
@@ -424,6 +432,7 @@ export const AdminProducts: React.FC = () => {
       stockXXL: xxlStock,
     });
     setEditingProduct(p);
+    setShowUrlManualInput(false);
     setActiveModalTab('info');
     setIsAddModalOpen(true);
   };
@@ -641,7 +650,15 @@ export const AdminProducts: React.FC = () => {
                 <tr key={prod.id} className="hover:bg-neutral-900/40">
                   <td className="py-3 px-4 flex items-center gap-3">
                     <div className="w-10 h-12 bg-neutral-900 border border-neutral-800 overflow-hidden shrink-0">
-                      <img src={prod.colors[0]?.images[0]} alt={prod.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                      <img
+                        src={resolveProductImage(prod.colors[0]?.images[0])}
+                        alt={prod.name}
+                        className="w-full h-full object-cover"
+                        referrerPolicy="no-referrer"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = hoodieImg;
+                        }}
+                      />
                     </div>
                     <div>
                       <span className="font-semibold text-white uppercase tracking-wider block">{prod.name}</span>
@@ -854,113 +871,176 @@ export const AdminProducts: React.FC = () => {
                     </div>
 
                     {/* Main Image Upload & Import Area */}
-                    <div className="p-3 sm:p-4 bg-neutral-900/60 border border-neutral-800 space-y-4">
+                    <div className="p-4 bg-neutral-900/70 border border-neutral-800 space-y-4">
                       <div className="flex items-center justify-between">
-                        <span className="text-[11px] font-mono uppercase tracking-wider text-white font-bold flex items-center gap-2">
-                          <ImageIcon className="w-4 h-4 text-emerald-400" />
-                          <span>Photos du Vêtement (Import Direct Appareil / PC)</span>
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <div className="w-7 h-7 bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+                            <ImageIcon className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <span className="text-xs font-mono uppercase tracking-wider text-white font-bold block">
+                              Photo Principale du Vêtement
+                            </span>
+                            <span className="text-[10px] text-neutral-400">
+                              Importez directement depuis votre appareil (smartphone, tablette ou PC)
+                            </span>
+                          </div>
+                        </div>
                         {isCompressingFormImage ? (
-                          <span className="text-[10px] font-mono text-amber-400 flex items-center gap-1.5 bg-amber-950/40 px-2 py-0.5 border border-amber-800/60">
+                          <span className="text-[10px] font-mono text-amber-400 flex items-center gap-1.5 bg-amber-950/40 px-2 py-1 border border-amber-800/60">
                             <RefreshCw className="w-3 h-3 animate-spin" />
-                            <span>Optimisation pour le Cloud...</span>
+                            <span>Optimisation en cours...</span>
                           </span>
-                        ) : (
-                          <span className="text-[10px] font-mono text-emerald-400 flex items-center gap-1">
+                        ) : formData.imageUrl ? (
+                          <span className="text-[10px] font-mono text-emerald-400 flex items-center gap-1 bg-emerald-950/40 px-2 py-0.5 border border-emerald-800/60">
                             <CheckCircle className="w-3 h-3" />
-                            <span>Synchro Cloud Directe</span>
+                            <span>Photo Prête & Visible</span>
                           </span>
-                        )}
+                        ) : null}
                       </div>
 
-                      {/* Main Photo Drop / Import Box */}
-                      <div className="space-y-3">
-                        <input
-                          type="file"
-                          ref={fileInputRef}
-                          accept="image/*"
-                          onChange={(e) => handleImageFileUpload(e, false)}
-                          className="hidden"
-                        />
+                      {/* Hidden file inputs */}
+                      <input
+                        type="file"
+                        ref={fileInputRef}
+                        accept="image/*"
+                        onChange={(e) => handleImageFileUpload(e, false)}
+                        className="hidden"
+                      />
+                      <input
+                        type="file"
+                        ref={cameraInputRef}
+                        accept="image/*"
+                        capture="environment"
+                        onChange={(e) => handleImageFileUpload(e, false)}
+                        className="hidden"
+                      />
 
-                        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
-                          {/* Main Image Preview Thumbnail */}
-                          <div className="w-28 h-36 bg-neutral-950 border border-neutral-700/80 shrink-0 relative overflow-hidden group shadow-lg">
-                            {formData.imageUrl ? (
-                              <>
-                                <img
-                                  src={formData.imageUrl}
-                                  alt="Garment Preview"
-                                  className="w-full h-full object-cover"
-                                />
-                                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1 p-2">
-                                  <button
-                                    type="button"
-                                    onClick={() => fileInputRef.current?.click()}
-                                    className="px-2 py-1 bg-white text-black text-[9px] font-bold uppercase tracking-wider hover:bg-neutral-200 cursor-pointer"
-                                  >
-                                    Changer
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => setFormData({ ...formData, imageUrl: '' })}
-                                    className="px-2 py-1 bg-red-600 text-white text-[9px] font-bold uppercase tracking-wider hover:bg-red-700 cursor-pointer"
-                                  >
-                                    Retirer
-                                  </button>
-                                </div>
-                              </>
-                            ) : (
-                              <div
-                                onClick={() => fileInputRef.current?.click()}
-                                className="w-full h-full flex flex-col items-center justify-center text-neutral-500 hover:text-white cursor-pointer transition-colors p-2 text-center"
-                              >
-                                <Upload className="w-6 h-6 mb-1 text-neutral-400" />
-                                <span className="text-[10px] font-mono uppercase">Importer Photo</span>
-                              </div>
-                            )}
-                          </div>
-
-                          {/* Upload Actions & URL Fallback */}
-                          <div className="flex-1 space-y-3 w-full">
-                            <div className="flex flex-wrap gap-2">
+                      {/* Main Photo Container */}
+                      {formData.imageUrl ? (
+                        <div className="flex flex-col sm:flex-row gap-5 items-center sm:items-start bg-neutral-950 p-4 border border-neutral-800">
+                          {/* Visual Image Preview */}
+                          <div className="w-36 h-44 bg-neutral-900 border border-neutral-700 shrink-0 relative overflow-hidden group shadow-xl">
+                            <img
+                              src={resolveProductImage(formData.imageUrl)}
+                              alt="Aperçu vêtement"
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).src = hoodieImg;
+                              }}
+                            />
+                            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2 p-3">
                               <button
                                 type="button"
                                 onClick={() => fileInputRef.current?.click()}
-                                className="px-4 py-2.5 bg-white text-black text-xs font-bold uppercase tracking-wider hover:bg-neutral-200 transition-colors flex items-center gap-2 cursor-pointer shadow-md"
+                                className="w-full py-1.5 bg-white text-black text-[10px] font-bold uppercase tracking-wider hover:bg-neutral-200 cursor-pointer shadow-sm flex items-center justify-center gap-1.5"
                               >
-                                <Upload className="w-4 h-4" />
-                                <span>Importer depuis Téléphone / PC</span>
+                                <Upload className="w-3 h-3" />
+                                <span>Remplacer</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setFormData({ ...formData, imageUrl: '' })}
+                                className="w-full py-1.5 bg-red-600 text-white text-[10px] font-bold uppercase tracking-wider hover:bg-red-700 cursor-pointer shadow-sm flex items-center justify-center gap-1.5"
+                              >
+                                <Trash2 className="w-3 h-3" />
+                                <span>Supprimer</span>
                               </button>
                             </div>
+                          </div>
 
-                            <p className="text-[11px] text-neutral-400">
-                              Sélectionnez directement vos photos depuis votre galerie mobile ou dossier PC. Les images sont automatiquement compressées et synchronisées en haute qualité sur Firestore.
-                            </p>
-
-                            <div className="space-y-1 pt-1">
-                              <span className="text-[10px] font-mono uppercase tracking-wider text-neutral-400 block">
-                                Ou saisir le lien URL d'une photo web :
+                          {/* Actions and details */}
+                          <div className="flex-1 space-y-3 w-full">
+                            <div className="space-y-1">
+                              <span className="text-[11px] font-bold uppercase tracking-wider text-white block">
+                                Image sélectionnée
                               </span>
-                              <input
-                                type="text"
-                                value={formData.imageUrl}
-                                onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
-                                placeholder="https://..."
-                                className="w-full px-3 py-2 bg-neutral-950 border border-neutral-800 text-white font-mono text-xs focus:border-white focus:outline-none"
-                              />
+                              <p className="text-[11px] text-neutral-400 leading-relaxed">
+                                La photo est automatiquement compressée et synchronisée en direct pour tous les clients externes.
+                              </p>
+                            </div>
+
+                            <div className="flex flex-wrap gap-2 pt-1">
+                              <button
+                                type="button"
+                                onClick={() => fileInputRef.current?.click()}
+                                className="px-4 py-2 bg-white text-black text-xs font-bold uppercase tracking-wider hover:bg-neutral-200 transition-colors flex items-center gap-2 cursor-pointer shadow-md"
+                              >
+                                <Upload className="w-3.5 h-3.5" />
+                                <span>Changer / Importer une autre photo</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => cameraInputRef.current?.click()}
+                                className="px-3.5 py-2 bg-neutral-800 hover:bg-neutral-700 text-white text-xs font-semibold uppercase tracking-wider transition-colors flex items-center gap-2 cursor-pointer border border-neutral-700"
+                              >
+                                <Camera className="w-3.5 h-3.5 text-cyan-400" />
+                                <span>Prendre photo (Caméra)</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setFormData({ ...formData, imageUrl: '' })}
+                                className="px-3 py-2 bg-neutral-900 hover:bg-red-950/60 text-neutral-400 hover:text-red-400 text-xs font-semibold uppercase tracking-wider transition-colors flex items-center gap-1.5 cursor-pointer border border-neutral-800"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                                <span>Retirer</span>
+                              </button>
                             </div>
                           </div>
                         </div>
-                      </div>
+                      ) : (
+                        /* Empty State: Drop / Click Box to Import */
+                        <div
+                          onClick={() => fileInputRef.current?.click()}
+                          className="p-8 border-2 border-dashed border-neutral-700 hover:border-white bg-neutral-950/80 text-center cursor-pointer transition-all hover:bg-neutral-900/50 group"
+                        >
+                          <div className="w-12 h-12 mx-auto mb-3 bg-neutral-900 border border-neutral-700 group-hover:border-white rounded-full flex items-center justify-center text-white transition-colors">
+                            <Upload className="w-6 h-6" />
+                          </div>
+                          <h4 className="text-sm font-bold uppercase tracking-wider text-white mb-1">
+                            Cliquez ici pour importer la photo du vêtement
+                          </h4>
+                          <p className="text-xs text-neutral-400 max-w-md mx-auto mb-4">
+                            Sélectionnez directement une photo depuis vos dossiers (PC) ou votre galerie photo (Smartphone / Tablette).
+                          </p>
+                          <div className="inline-flex items-center gap-3">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                fileInputRef.current?.click();
+                              }}
+                              className="px-4 py-2 bg-white text-black text-xs font-bold uppercase tracking-wider hover:bg-neutral-200 transition-colors cursor-pointer shadow-md"
+                            >
+                              Choisir un fichier
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                cameraInputRef.current?.click();
+                              }}
+                              className="px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-white text-xs font-semibold uppercase tracking-wider transition-colors cursor-pointer border border-neutral-700 flex items-center gap-1.5"
+                            >
+                              <Camera className="w-3.5 h-3.5 text-cyan-400" />
+                              <span>Caméra mobile</span>
+                            </button>
+                          </div>
+                        </div>
+                      )}
 
                       {/* Additional Gallery Photos (Lookbook, Angles) */}
                       <div className="pt-3 border-t border-neutral-800 space-y-2">
                         <div className="flex items-center justify-between">
-                          <span className="text-[10px] font-mono uppercase tracking-wider text-neutral-300 font-bold flex items-center gap-1.5">
-                            <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
-                            <span>Galerie Additionnelle (Angles, Lookbook, Détails)</span>
-                          </span>
+                          <div>
+                            <span className="text-[11px] font-mono uppercase tracking-wider text-neutral-200 font-bold flex items-center gap-1.5">
+                              <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
+                              <span>Photos Additionnelles (Angles, Lookbook, Détails)</span>
+                            </span>
+                            <span className="text-[10px] text-neutral-400 block">
+                              Importez plusieurs photos à la fois pour enrichir la fiche produit
+                            </span>
+                          </div>
                           <input
                             type="file"
                             ref={galleryInputRef}
@@ -972,7 +1052,7 @@ export const AdminProducts: React.FC = () => {
                           <button
                             type="button"
                             onClick={() => galleryInputRef.current?.click()}
-                            className="px-2.5 py-1 bg-neutral-800 hover:bg-neutral-700 text-white text-[10px] font-mono uppercase tracking-wider flex items-center gap-1 cursor-pointer transition-colors"
+                            className="px-3 py-1.5 bg-neutral-800 hover:bg-white hover:text-black text-white text-[10px] font-mono uppercase tracking-wider flex items-center gap-1.5 cursor-pointer transition-colors border border-neutral-700"
                           >
                             <Plus className="w-3 h-3 text-cyan-400" />
                             <span>Importer d'autres photos</span>
@@ -982,8 +1062,15 @@ export const AdminProducts: React.FC = () => {
                         {formData.additionalImages.length > 0 ? (
                           <div className="flex flex-wrap gap-2 pt-1">
                             {formData.additionalImages.map((img, idx) => (
-                              <div key={idx} className="relative w-16 h-20 bg-neutral-950 border border-neutral-800 group overflow-hidden shadow-sm">
-                                <img src={img} alt={`Gallery ${idx}`} className="w-full h-full object-cover" />
+                              <div key={idx} className="relative w-18 h-24 bg-neutral-950 border border-neutral-800 group overflow-hidden shadow-sm">
+                                <img
+                                  src={resolveProductImage(img)}
+                                  alt={`Gallery ${idx}`}
+                                  className="w-full h-full object-cover"
+                                  onError={(e) => {
+                                    (e.target as HTMLImageElement).src = hoodieImg;
+                                  }}
+                                />
                                 <button
                                   type="button"
                                   onClick={() => handleRemoveAdditionalImage(idx)}
@@ -997,8 +1084,43 @@ export const AdminProducts: React.FC = () => {
                           </div>
                         ) : (
                           <p className="text-[10px] font-mono text-neutral-500">
-                            Aucune photo secondaire ajoutée. Vous pouvez en sélectionner plusieurs en une seule fois.
+                            Aucune photo secondaire. Cliquez sur "Importer d'autres photos" pour en ajouter.
                           </p>
+                        )}
+                      </div>
+
+                      {/* Optional Collapsed Web URL Link */}
+                      <div className="pt-2 border-t border-neutral-800/60">
+                        {!showUrlManualInput ? (
+                          <button
+                            type="button"
+                            onClick={() => setShowUrlManualInput(true)}
+                            className="text-[10px] font-mono text-neutral-500 hover:text-neutral-300 underline cursor-pointer"
+                          >
+                            Option avancée : coller une URL web externe
+                          </button>
+                        ) : (
+                          <div className="space-y-1 bg-black/40 p-2.5 border border-neutral-800">
+                            <div className="flex items-center justify-between">
+                              <span className="text-[10px] font-mono text-neutral-400">
+                                Lien web direct (HTTPS) :
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => setShowUrlManualInput(false)}
+                                className="text-[10px] text-neutral-500 hover:text-white cursor-pointer"
+                              >
+                                Fermer
+                              </button>
+                            </div>
+                            <input
+                              type="text"
+                              value={formData.imageUrl}
+                              onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
+                              placeholder="https://..."
+                              className="w-full px-3 py-1.5 bg-neutral-950 border border-neutral-800 text-white font-mono text-xs focus:border-white focus:outline-none"
+                            />
+                          </div>
                         )}
                       </div>
                     </div>

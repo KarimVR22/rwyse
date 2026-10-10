@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useStore } from '../../context/StoreContext';
 import { BadgeDollarSign, Check, Percent, RefreshCw } from 'lucide-react';
+import { resolveProductImage } from '../../utils/imageResolver';
+import { hoodieImg } from '../../data/initialData';
 
 export const AdminPriceManagement: React.FC = () => {
   const { products, updateProductPrice, deliveryZones, updateDeliveryZone, siteSettings } = useStore();
@@ -111,7 +113,15 @@ export const AdminPriceManagement: React.FC = () => {
                 <tr key={p.id} className="hover:bg-neutral-900/30">
                   <td className="py-3 px-4 flex items-center gap-3">
                     <div className="w-10 h-12 bg-neutral-900 border border-neutral-800 overflow-hidden shrink-0">
-                      <img src={p.colors[0]?.images[0]} alt={p.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                      <img
+                        src={resolveProductImage(p.colors[0]?.images[0])}
+                        alt={p.name}
+                        className="w-full h-full object-cover"
+                        referrerPolicy="no-referrer"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = hoodieImg;
+                        }}
+                      />
                     </div>
                     <div>
                       <span className="font-semibold text-white uppercase tracking-wider block">{p.name}</span>

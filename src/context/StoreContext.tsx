@@ -33,6 +33,7 @@ import {
   OperationType,
 } from '../firebase';
 import { compressImageIfNeeded, sanitizeForFirestore } from '../utils/imageCompressor';
+import { resolveProductImage } from '../utils/imageResolver';
 
 interface StoreContextType {
   products: Product[];
@@ -102,13 +103,44 @@ interface StoreContextType {
   clearAllDemoOrders: () => Promise<void>;
 }
 
+const DEMO_ORDER_NUMBERS = new Set(['RWY-84920', 'RWY-84921', 'RWY-84922', 'RWY-84923']);
+const DEMO_ORDER_IDS = new Set(['ord-101', 'ord-102', 'ord-103']);
+
+export const isDemoOrder = (o: Partial<Order> | null | undefined): boolean => {
+  if (!o) return false;
+  const id = (o.id || '').trim();
+  const num = (o.orderNumber || '').trim().toUpperCase();
+  const name = (o.customerName || '').trim().toLowerCase();
+  const email = (o.customerEmail || '').trim().toLowerCase();
+  const phone = (o.customerPhone || '').replace(/[\s\-\(\)\.]/g, '');
+
+  if (id && DEMO_ORDER_IDS.has(id)) return true;
+  if (num && DEMO_ORDER_NUMBERS.has(num)) return true;
+  if (name && (name.includes('sarra mansour') || name.includes('yassine ben amor') || name.includes('yassine trabelsi'))) return true;
+  if (email && (email.includes('sarra.mansour') || email.includes('yassine.ba') || email.includes('yassine.trabelsi'))) return true;
+  if (phone && (phone.includes('52341890') || phone.includes('98421890') || phone.includes('98765432'))) return true;
+
+  return false;
+};
+
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
 
 export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Load from localStorage or defaults
   const [products, setProducts] = useState<Product[]>(() => {
     const saved = localStorage.getItem('rwyse_products_v6');
-    return saved ? JSON.parse(saved) : initialProducts;
+    if (saved) {
+      try {
+        const parsed: Product[] = JSON.parse(saved);
+        return parsed.map((p) => ({
+          ...p,
+          colors: (p.colors || []).map((c) => ({
+            ...c,
+            images: (c.images || []).map((img) => resolveProductImage(img)),
+          })),
+        }));
+      } catch {}
+    }
+    return initialProducts;
   });
 
   const [collections, setCollections] = useState<Collection[]>(() => {
@@ -167,8 +199,9 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const saved = localStorage.getItem('rwyse_orders_v6');
       let currentOrders: Order[] = saved ? JSON.parse(saved) : [];
 
-      // Filter out any explicitly deleted orders or customers
-      return currentOrders.filter((o) => {
+      // Filter out any demo orders or explicitly deleted orders
+      const realOrders = currentOrders.filter((o) => {
+        if (!o || isDemoOrder(o)) return false;
         if (deletedSet.has(o.id)) return false;
         const phoneKey = (o.customerPhone || '').replace(/\s+/g, '').toLowerCase();
         const emailKey = (o.customerEmail || '').trim().toLowerCase();
@@ -176,6 +209,10 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         if (deletedCustSet.has(phoneKey) || deletedCustSet.has(emailKey) || deletedCustSet.has(nameKey)) return false;
         return true;
       });
+
+      // Synchronize cleaned real orders back to localStorage immediately
+      localStorage.setItem('rwyse_orders_v6', JSON.stringify(realOrders));
+      return realOrders;
     } catch {
       return [];
     }
@@ -209,7 +246,16 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [notifications, setNotifications] = useState<AdminNotification[]>(() => {
     try {
       const saved = localStorage.getItem('rwyse_notifications');
-      return saved ? JSON.parse(saved) : [];
+      const parsed: AdminNotification[] = saved ? JSON.parse(saved) : [];
+      const cleaned = parsed.filter(
+        (n) =>
+          !n.message?.includes('RWY-84920') &&
+          !n.message?.includes('RWY-84921') &&
+          !n.message?.includes('Sarra') &&
+          !n.message?.includes('Yassine')
+      );
+      localStorage.setItem('rwyse_notifications', JSON.stringify(cleaned));
+      return cleaned;
     } catch {
       return [];
     }
@@ -272,6 +318,40 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     localStorage.setItem('rwyse_orders_v6', JSON.stringify(orders));
   }, [orders]);
 
+  // Active sweep to purge demo/test orders from Firestore and clean localStorage
+  useEffect(() => {
+    const sweepDemoOrders = async () => {
+      const demoKeys = ['ord-101', 'ord-102', 'ord-103', 'RWY-84920', 'RWY-84921'];
+      for (const k of demoKeys) {
+        try {
+          await deleteDoc(doc(db, 'orders', k));
+        } catch {}
+      }
+
+      try {
+        const raw = localStorage.getItem('rwyse_orders_v6');
+        if (raw) {
+          const parsed: Order[] = JSON.parse(raw);
+          const filtered = parsed.filter((o) => !isDemoOrder(o));
+          localStorage.setItem('rwyse_orders_v6', JSON.stringify(filtered));
+        }
+        const notifRaw = localStorage.getItem('rwyse_notifications');
+        if (notifRaw) {
+          const parsedNotifs: AdminNotification[] = JSON.parse(notifRaw);
+          const filteredNotifs = parsedNotifs.filter(
+            (n) =>
+              !n.message?.includes('RWY-84920') &&
+              !n.message?.includes('RWY-84921') &&
+              !n.message?.includes('Sarra') &&
+              !n.message?.includes('Yassine')
+          );
+          localStorage.setItem('rwyse_notifications', JSON.stringify(filteredNotifs));
+        }
+      } catch {}
+    };
+    sweepDemoOrders();
+  }, []);
+
   // Audio notification chime using Web Audio API (cross-browser, zero external files)
   const playOrderChime = () => {
     try {
@@ -313,8 +393,18 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         if (!snapshot.empty) {
           snapshot.forEach((docSnap) => {
             const data = docSnap.data() as Order;
+            const ordId = data?.id || docSnap.id;
+
+            // Automatically and permanently purge demo orders from Firestore if detected
+            if (isDemoOrder(data) || DEMO_ORDER_IDS.has(ordId) || DEMO_ORDER_NUMBERS.has(docSnap.id)) {
+              deleteDoc(doc(db, 'orders', docSnap.id)).catch(() => {});
+              if (data?.id && data.id !== docSnap.id) {
+                deleteDoc(doc(db, 'orders', data.id)).catch(() => {});
+              }
+              return;
+            }
+
             if (data && data.orderNumber) {
-              const ordId = data.id || docSnap.id;
               const phoneKey = (data.customerPhone || '').replace(/\s+/g, '').toLowerCase();
               const emailKey = (data.customerEmail || '').trim().toLowerCase();
               const nameKey = (data.customerName || '').trim().toLowerCase();
@@ -403,9 +493,16 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             if (data && data.name) {
               const pId = data.id || docSnap.id;
               if (!deletedSet.has(pId)) {
+                const resolvedColors = (data.colors || []).map((c) => ({
+                  ...c,
+                  images: (c.images || []).map((img) => resolveProductImage(img)),
+                }));
                 loaded.push({
                   ...data,
                   id: pId,
+                  colors: resolvedColors.length > 0 ? resolvedColors : [
+                    { name: 'Standard', hex: '#111111', images: [resolveProductImage(null)] }
+                  ],
                 });
               }
             }
@@ -1208,8 +1305,18 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const loaded: Order[] = [];
       snap.forEach((docSnap) => {
         const data = docSnap.data() as Order;
+        const ordId = data?.id || docSnap.id;
+
+        // Automatically purge any demo orders detected in Firestore
+        if (isDemoOrder(data) || DEMO_ORDER_IDS.has(ordId) || DEMO_ORDER_NUMBERS.has(docSnap.id)) {
+          deleteDoc(doc(db, 'orders', docSnap.id)).catch(() => {});
+          if (data?.id && data.id !== docSnap.id) {
+            deleteDoc(doc(db, 'orders', data.id)).catch(() => {});
+          }
+          return;
+        }
+
         if (data && data.orderNumber) {
-          const ordId = data.id || docSnap.id;
           const phoneKey = (data.customerPhone || '').replace(/\s+/g, '').toLowerCase();
           const emailKey = (data.customerEmail || '').trim().toLowerCase();
           const nameKey = (data.customerName || '').trim().toLowerCase();
@@ -1238,15 +1345,31 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const clearAllDemoOrders = async () => {
     try {
       const orderIds = orders.map((o) => o.id);
-      // Mark all current order IDs as deleted
+      const allKnownDemoDocIds = ['ord-101', 'ord-102', 'ord-103', 'RWY-84920', 'RWY-84921'];
+
+      // Mark all current order IDs and demo IDs as deleted
       setDeletedOrderIds((prev) => {
-        const updated = Array.from(new Set([...prev, ...orderIds, 'ord-101', 'ord-102']));
+        const updated = Array.from(new Set([...prev, ...orderIds, ...allKnownDemoDocIds]));
         localStorage.setItem('rwyse_deleted_order_ids_v6', JSON.stringify(updated));
         return updated;
       });
       // Mark demo customers as deleted
       setDeletedCustomerKeys((prev) => {
-        const updated = Array.from(new Set([...prev, 'sarra.mansour@example.tn', '+216 52 341 890', 'yassine.trabelsi@example.tn', '+216 98 765 432']));
+        const updated = Array.from(
+          new Set([
+            ...prev,
+            'sarra.mansour@example.tn',
+            '+216 52 341 890',
+            '52341890',
+            'yassine.ba@example.tn',
+            'yassine.trabelsi@example.tn',
+            '+216 98 421 890',
+            '98421890',
+            '+216 98 765 432',
+            'Sarra Mansour',
+            'Yassine Ben Amor',
+          ])
+        );
         localStorage.setItem('rwyse_deleted_customer_keys_v6', JSON.stringify(updated));
         return updated;
       });
@@ -1258,8 +1381,9 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       localStorage.setItem('rwyse_notifications', JSON.stringify([]));
       setAdminSelectedOrderId(null);
 
-      // Delete from Firestore
-      for (const id of orderIds) {
+      // Delete demo documents and current orders from Firestore
+      const toDeleteFromDb = Array.from(new Set([...orderIds, ...allKnownDemoDocIds]));
+      for (const id of toDeleteFromDb) {
         try {
           await deleteDoc(doc(db, 'orders', id));
         } catch (e) {

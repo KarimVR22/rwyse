@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useStore } from '../../context/StoreContext';
 import { X, Plus, Minus, Trash2, ArrowRight, Tag, CheckCircle2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { resolveProductImage } from '../../utils/imageResolver';
+import { hoodieImg } from '../../data/initialData';
 
 interface CartDrawerProps {
   onNavigate: (path: string) => void;
@@ -123,10 +125,13 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ onNavigate }) => {
                     {/* Item Image */}
                     <div className="w-20 h-24 bg-neutral-900 border border-neutral-800 overflow-hidden shrink-0 relative">
                       <img
-                        src={item.product.colors.find((c) => c.name === item.selectedColor)?.images[0] || item.product.colors[0]?.images[0]}
+                        src={resolveProductImage(item.product.colors.find((c) => c.name === item.selectedColor)?.images[0] || item.product.colors[0]?.images[0])}
                         alt={item.product.name}
                         className="w-full h-full object-cover"
                         referrerPolicy="no-referrer"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = hoodieImg;
+                        }}
                       />
                     </div>
 

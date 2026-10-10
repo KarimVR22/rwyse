@@ -11,13 +11,30 @@ export const AccountPage: React.FC<AccountPageProps> = ({ onNavigate, onNavigate
   const { orders, wishlist, products, siteSettings } = useStore();
   const [activeTab, setActiveTab] = useState<'orders' | 'profile' | 'addresses'>('orders');
 
-  const [customerProfile, setCustomerProfile] = useState({
-    name: 'Yassine Ben Amor',
-    email: 'yassine.ba@example.tn',
-    phone: '+216 98 421 890',
-    address: 'Résidence Les Palmiers, Apt B4, Les Berges du Lac 2',
-    city: 'Tunis',
-    postalCode: '1053',
+  const [customerProfile, setCustomerProfile] = useState(() => {
+    try {
+      const saved = localStorage.getItem('rwyse_user_profile');
+      if (saved) return JSON.parse(saved);
+      if (orders.length > 0) {
+        const latest = orders[0];
+        return {
+          name: latest.customerName || 'Client RWYSE',
+          email: latest.customerEmail || 'client@rwyse.tn',
+          phone: latest.customerPhone || '+216 -- --- ---',
+          address: latest.address || 'Tunisie',
+          city: latest.city || 'Tunis',
+          postalCode: latest.postalCode || '1000',
+        };
+      }
+    } catch {}
+    return {
+      name: 'Client RWYSE',
+      email: 'client@rwyse.tn',
+      phone: '+216 -- --- ---',
+      address: 'Tunisie',
+      city: 'Tunis',
+      postalCode: '1000',
+    };
   });
 
   const wishlistProducts = products.filter((p) => wishlist.includes(p.id));

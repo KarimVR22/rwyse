@@ -58,7 +58,7 @@ export const OrderTrackingPage: React.FC<OrderTrackingPageProps> = ({
             Track Your Order
           </h1>
           <p className="mt-3 text-xs sm:text-sm text-neutral-400 font-light">
-            Enter your RWYSE order identifier (e.g. <strong>RWY-84920</strong>) or phone number to monitor parcel transit.
+            Enter your RWYSE order identifier (e.g. <strong>RWY-XXXXX</strong>) or phone number to monitor parcel transit.
           </p>
 
           {/* Search Form */}

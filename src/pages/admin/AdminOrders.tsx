@@ -210,13 +210,17 @@ export const AdminOrders: React.FC = () => {
       {/* Orders Table */}
       <div className="bg-[#111116] border border-neutral-800 overflow-x-auto">
         {filtered.length === 0 ? (
-          <div className="p-12 text-center space-y-3">
-            <AlertCircle className="w-8 h-8 text-neutral-600 mx-auto" />
-            <h3 className="text-sm font-bold uppercase tracking-wider text-neutral-300">
-              Aucune commande trouvée
+          <div className="p-14 text-center space-y-3">
+            <div className="w-12 h-12 rounded-full bg-neutral-900 border border-neutral-800 flex items-center justify-center text-emerald-400 mx-auto">
+              <CheckCircle2 className="w-6 h-6" />
+            </div>
+            <h3 className="text-sm font-bold uppercase tracking-wider text-neutral-200 font-mono">
+              {orders.length === 0 ? 'En attente de commandes clients réelles' : 'Aucune commande trouvée'}
             </h3>
-            <p className="text-xs text-neutral-500 max-w-sm mx-auto">
-              {search
+            <p className="text-xs text-neutral-400 max-w-md mx-auto leading-relaxed">
+              {orders.length === 0
+                ? 'Toutes les commandes de test ont été purgées. Dès qu’un client visite votre site et valide son panier, sa commande apparaîtra ici instantanément en direct avec un signal sonore.'
+                : search
                 ? `Aucun résultat pour la recherche "${search}".`
                 : 'Aucune commande ne correspond au filtre sélectionné.'}
             </p>

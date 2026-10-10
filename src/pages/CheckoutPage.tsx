@@ -163,7 +163,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onNavigate, onOrderP
                       type="text"
                       required
                       autoComplete="name"
-                      placeholder="e.g. Yassine Ben Amor"
+                      placeholder="Nom et prénom complet"
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
                       className="w-full px-3.5 py-2.5 bg-neutral-900 border border-neutral-800 text-white placeholder-neutral-500 focus:outline-none focus:border-neutral-500 tracking-wide"

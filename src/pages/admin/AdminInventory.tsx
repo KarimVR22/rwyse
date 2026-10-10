@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useStore } from '../../context/StoreContext';
 import { AlertTriangle, Boxes, Plus, Check } from 'lucide-react';
+import { resolveProductImage } from '../../utils/imageResolver';
+import { hoodieImg } from '../../data/initialData';
 
 export const AdminInventory: React.FC = () => {
   const { products, updateInventoryStock } = useStore();
@@ -74,10 +76,13 @@ export const AdminInventory: React.FC = () => {
               <div className="flex items-center gap-4">
                 <div className="w-14 h-18 bg-neutral-900 border border-neutral-800 overflow-hidden shrink-0">
                   <img
-                    src={prod.colors[0]?.images[0]}
+                    src={resolveProductImage(prod.colors[0]?.images[0])}
                     alt={prod.name}
                     className="w-full h-full object-cover"
                     referrerPolicy="no-referrer"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = hoodieImg;
+                    }}
                   />
                 </div>
                 <div>

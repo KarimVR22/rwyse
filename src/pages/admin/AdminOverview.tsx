@@ -12,6 +12,8 @@ import {
   XCircle,
   ArrowUpRight,
 } from 'lucide-react';
+import { resolveProductImage } from '../../utils/imageResolver';
+import { hoodieImg } from '../../data/initialData';
 
 export const AdminOverview: React.FC<{ onNavigateTab: (tab: any) => void }> = ({ onNavigateTab }) => {
   const { products, orders, siteSettings } = useStore();
@@ -302,7 +304,15 @@ export const AdminOverview: React.FC<{ onNavigateTab: (tab: any) => void }> = ({
                   <tr key={p.id} className="hover:bg-neutral-900/30">
                     <td className="py-3 px-4 flex items-center gap-3">
                       <div className="w-10 h-12 bg-neutral-900 border border-neutral-800 overflow-hidden shrink-0">
-                        <img src={p.colors[0]?.images[0]} alt={p.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                        <img
+                          src={resolveProductImage(p.colors[0]?.images[0])}
+                          alt={p.name}
+                          className="w-full h-full object-cover"
+                          referrerPolicy="no-referrer"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = hoodieImg;
+                          }}
+                        />
                       </div>
                       <span className="font-semibold text-white uppercase tracking-wide">{p.name}</span>
                     </td>

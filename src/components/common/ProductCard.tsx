@@ -4,6 +4,9 @@ import { useStore } from '../../context/StoreContext';
 import { Bookmark, Eye, Plus, Check } from 'lucide-react';
 import { motion } from 'motion/react';
 
+import { resolveProductImage } from '../../utils/imageResolver';
+import { hoodieImg } from '../../data/initialData';
+
 interface ProductCardProps {
   product: Product;
   onNavigateToProduct: (slug: string) => void;
@@ -16,8 +19,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onNavigateToP
   const [quickAdded, setQuickAdded] = useState(false);
 
   const activeColor = product.colors[selectedColorIndex] || product.colors[0];
-  const primaryImg = activeColor.images[0] || product.colors[0]?.images[0];
-  const hoverImg = activeColor.images[1] || primaryImg;
+  const rawPrimary = activeColor?.images[0] || product.colors[0]?.images[0];
+  const rawHover = activeColor?.images[1] || rawPrimary;
+  const primaryImg = resolveProductImage(rawPrimary);
+  const hoverImg = resolveProductImage(rawHover);
 
   const totalStock = product.sizes.reduce((sum, s) => sum + s.stock, 0);
   const isSoldOut = product.isSoldOut || totalStock === 0;

@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useStore } from '../context/StoreContext';
 import { Plus, Minus, Trash2, ArrowRight, ArrowLeft, Tag, CheckCircle2, ShieldCheck, Truck } from 'lucide-react';
+import { resolveProductImage } from '../utils/imageResolver';
+import { hoodieImg } from '../data/initialData';
 
 interface CartPageProps {
   onNavigate: (path: string) => void;
@@ -129,13 +131,16 @@ export const CartPage: React.FC<CartPageProps> = ({ onNavigate, onNavigateToProd
                       className="w-24 sm:w-28 aspect-[3/4] bg-neutral-900 border border-neutral-800 shrink-0 cursor-pointer overflow-hidden"
                     >
                       <img
-                        src={
+                        src={resolveProductImage(
                           item.product.colors.find((c) => c.name === item.selectedColor)?.images[0] ||
                           item.product.colors[0]?.images[0]
-                        }
+                        )}
                         alt={item.product.name}
                         className="w-full h-full object-cover hover:scale-105 transition-transform"
                         referrerPolicy="no-referrer"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = hoodieImg;
+                        }}
                       />
                     </div>
 
