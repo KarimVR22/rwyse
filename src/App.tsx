@@ -6,8 +6,12 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { StoreProvider, useStore } from './context/StoreContext';
+import { LanguageProvider, useLanguage } from './context/LanguageContext';
 import { Navbar } from './components/common/Navbar';
 import { AnnouncementBar } from './components/common/AnnouncementBar';
+import { InfolineBar } from './components/common/InfolineBar';
+import { FloatingActionControls } from './components/common/FloatingActionControls';
+import { LuxuryBackgroundMotifs } from './components/common/LuxuryBackgroundMotifs';
 import { Footer } from './components/common/Footer';
 import { CartDrawer } from './components/common/CartDrawer';
 import { QuickViewModal } from './components/common/QuickViewModal';
@@ -34,6 +38,7 @@ import { AdminDashboard } from './pages/admin/AdminDashboard';
 
 const AppContent: React.FC = () => {
   const { toast } = useStore();
+  const { isRTL } = useLanguage();
   const [currentPath, setCurrentPath] = useState<string>(() => {
     return window.location.hash ? window.location.hash.replace('#', '') : '/';
   });
@@ -193,12 +198,17 @@ const AppContent: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#0b0b0d] text-neutral-100 flex flex-col font-sans selection:bg-white selection:text-black">
+    <div
+      dir={isRTL ? 'rtl' : 'ltr'}
+      className="min-h-screen bg-[#FAFAFC] text-neutral-900 flex flex-col font-sans selection:bg-black selection:text-white relative"
+    >
+      {/* Luxury Background Micro-Patterns & Motifs */}
+      {!isAdmin && <LuxuryBackgroundMotifs />}
       
       {/* Customer Header Surfaces (Hidden on Admin) */}
       {!isAdmin && (
         <>
-          <AnnouncementBar onNavigateToShop={() => navigate('/shop')} />
+          <InfolineBar onNavigateToShop={() => navigate('/shop')} />
           <Navbar
             currentPath={currentPath}
             onNavigate={navigate}
@@ -222,6 +232,9 @@ const AppContent: React.FC = () => {
 
       {/* Customer Footer (Hidden on Admin) */}
       {!isAdmin && <Footer onNavigate={navigate} />}
+
+      {/* Customer Floating Controls & Door Handle (Hidden on Admin) */}
+      {!isAdmin && <FloatingActionControls />}
 
       {/* Global Modals & Drawers */}
       <CartDrawer onNavigate={navigate} />
@@ -248,8 +261,10 @@ const AppContent: React.FC = () => {
 
 export default function App() {
   return (
-    <StoreProvider>
-      <AppContent />
-    </StoreProvider>
+    <LanguageProvider>
+      <StoreProvider>
+        <AppContent />
+      </StoreProvider>
+    </LanguageProvider>
   );
 }

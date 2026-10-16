@@ -85,19 +85,19 @@ export const ShopPage: React.FC<ShopPageProps> = ({ onNavigateToProduct }) => {
   };
 
   return (
-    <div className="w-full bg-[#0b0b0d] text-white min-h-screen py-8 sm:py-12">
+    <div className="w-full bg-[#FAFAFC] text-neutral-900 min-h-screen py-8 sm:py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Page Title & Breadcrumbs */}
-        <div className="mb-8 border-b border-neutral-800/80 pb-6 flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div className="mb-8 border-b border-neutral-200 pb-6 flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div>
-            <span className="text-[10px] font-mono uppercase tracking-[0.3em] text-neutral-400 block mb-2">
+            <span className="text-[10px] font-mono uppercase tracking-[0.3em] text-neutral-500 block mb-2">
               CATALOG // ARCHIVE
             </span>
-            <h1 className="text-3xl sm:text-5xl font-display font-extrabold uppercase text-white tracking-tight">
+            <h1 className="text-3xl sm:text-5xl font-display font-extrabold uppercase text-neutral-900 tracking-tight">
               All Silhouettes
             </h1>
-            <p className="mt-2 text-xs sm:text-sm text-neutral-400 font-light max-w-xl">
+            <p className="mt-2 text-xs sm:text-sm text-neutral-600 font-light max-w-xl">
               Contemporary streetwear crafted from 500 GSM loopback cotton and structured technical fabrics.
             </p>
           </div>
@@ -108,23 +108,23 @@ export const ShopPage: React.FC<ShopPageProps> = ({ onNavigateToProduct }) => {
               setSelectedCollection('DROP 01: RISE & GRIND');
               setSelectedCategory('All');
             }}
-            className="px-4 py-2 bg-blue-950/40 hover:bg-blue-900/50 border border-blue-700/80 text-blue-200 text-xs font-mono uppercase tracking-wider flex items-center gap-2 cursor-pointer self-start md:self-auto transition-colors"
+            className="px-4 py-2 bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-900 text-xs font-mono uppercase tracking-wider flex items-center gap-2 cursor-pointer self-start md:self-auto transition-colors shadow-xs"
           >
-            <span className="w-2 h-2 rounded-full bg-blue-400 animate-ping" />
+            <span className="w-2 h-2 rounded-full bg-blue-500 animate-ping" />
             <span>Filter Drop 01: Rise & Grind</span>
           </button>
         </div>
 
         {/* Category Filter Bar */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-4 mb-6 border-b border-neutral-800/40 scrollbar-none">
+        <div className="flex items-center gap-2 overflow-x-auto pb-4 mb-6 border-b border-neutral-200 scrollbar-none">
           {categories.map((cat) => (
             <button
               key={cat}
               onClick={() => setSelectedCategory(cat)}
               className={`px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] whitespace-nowrap transition-colors border cursor-pointer ${
                 selectedCategory === cat
-                  ? 'bg-white text-black border-white'
-                  : 'bg-neutral-900/60 text-neutral-400 border-neutral-800 hover:border-neutral-600 hover:text-white'
+                  ? 'bg-black text-white border-black shadow-xs'
+                  : 'bg-white text-neutral-600 border-neutral-300 hover:border-black hover:text-black'
               }`}
             >
               {cat}
@@ -139,12 +139,12 @@ export const ShopPage: React.FC<ShopPageProps> = ({ onNavigateToProduct }) => {
           <div className="flex items-center flex-wrap gap-3">
             <button
               onClick={() => setMobileFiltersOpen(!mobileFiltersOpen)}
-              className="px-3.5 py-2 bg-neutral-900 border border-neutral-800 hover:border-neutral-600 text-xs font-semibold uppercase tracking-wider text-neutral-200 flex items-center gap-2 cursor-pointer"
+              className="px-3.5 py-2 bg-white border border-neutral-300 hover:border-black text-xs font-semibold uppercase tracking-wider text-neutral-900 flex items-center gap-2 cursor-pointer shadow-xs"
             >
               <SlidersHorizontal className="w-3.5 h-3.5" />
               <span>Filters</span>
               {activeFilterCount > 0 && (
-                <span className="w-4 h-4 rounded-full bg-white text-black text-[10px] font-bold flex items-center justify-center">
+                <span className="w-4 h-4 rounded-full bg-black text-white text-[10px] font-bold flex items-center justify-center">
                   {activeFilterCount}
                 </span>
               )}
@@ -153,10 +153,10 @@ export const ShopPage: React.FC<ShopPageProps> = ({ onNavigateToProduct }) => {
             {/* Quick in-stock filter */}
             <button
               onClick={() => setInStockOnly(!inStockOnly)}
-              className={`px-3 py-2 text-xs uppercase tracking-wider border transition-colors cursor-pointer ${
+              className={`px-3 py-2 text-xs uppercase tracking-wider border transition-colors cursor-pointer shadow-xs ${
                 inStockOnly
-                  ? 'bg-neutral-800 border-white text-white'
-                  : 'bg-neutral-900/40 border-neutral-800 text-neutral-400 hover:text-white'
+                  ? 'bg-black border-black text-white'
+                  : 'bg-white border-neutral-300 text-neutral-700 hover:border-black hover:text-black'
               }`}
             >
               In Stock Only
@@ -165,10 +165,10 @@ export const ShopPage: React.FC<ShopPageProps> = ({ onNavigateToProduct }) => {
             {/* Quick New Drops filter */}
             <button
               onClick={() => setNewArrivalsOnly(!newArrivalsOnly)}
-              className={`px-3 py-2 text-xs uppercase tracking-wider border transition-colors cursor-pointer ${
+              className={`px-3 py-2 text-xs uppercase tracking-wider border transition-colors cursor-pointer shadow-xs ${
                 newArrivalsOnly
-                  ? 'bg-neutral-800 border-white text-white'
-                  : 'bg-neutral-900/40 border-neutral-800 text-neutral-400 hover:text-white'
+                  ? 'bg-black border-black text-white'
+                  : 'bg-white border-neutral-300 text-neutral-700 hover:border-black hover:text-black'
               }`}
             >
               New Drops
@@ -177,7 +177,7 @@ export const ShopPage: React.FC<ShopPageProps> = ({ onNavigateToProduct }) => {
             {activeFilterCount > 0 && (
               <button
                 onClick={resetFilters}
-                className="text-xs text-neutral-400 hover:text-white underline uppercase tracking-wider cursor-pointer ml-2"
+                className="text-xs text-neutral-500 hover:text-black underline uppercase tracking-wider cursor-pointer ml-2"
               >
                 Clear All
               </button>
@@ -186,16 +186,16 @@ export const ShopPage: React.FC<ShopPageProps> = ({ onNavigateToProduct }) => {
 
           {/* Right: Results Count & Sort Dropdown */}
           <div className="flex items-center justify-between md:justify-end gap-4 text-xs">
-            <span className="text-neutral-400 font-mono tracking-wider">
+            <span className="text-neutral-500 font-mono tracking-wider">
               {filteredProducts.length} {filteredProducts.length === 1 ? 'PIECE' : 'PIECES'}
             </span>
 
             <div className="flex items-center gap-2">
-              <span className="text-neutral-400 uppercase tracking-widest text-[11px] hidden sm:inline">Sort by:</span>
+              <span className="text-neutral-500 uppercase tracking-widest text-[11px] hidden sm:inline">Sort by:</span>
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="bg-neutral-900 border border-neutral-800 text-xs text-white px-3 py-2 focus:outline-none focus:border-neutral-600 uppercase tracking-wider font-mono cursor-pointer"
+                className="bg-white border border-neutral-300 text-xs text-neutral-900 px-3 py-2 focus:outline-none focus:border-black uppercase tracking-wider font-mono cursor-pointer shadow-xs"
               >
                 <option value="featured">Featured</option>
                 <option value="newest">Newest Arrivals</option>
@@ -209,12 +209,12 @@ export const ShopPage: React.FC<ShopPageProps> = ({ onNavigateToProduct }) => {
 
         {/* Expanded Filters Drawer / Panel */}
         {mobileFiltersOpen && (
-          <div className="p-6 bg-[#111116] border border-neutral-800 mb-8 space-y-6 animate-in fade-in duration-200">
-            <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
-              <span className="text-xs font-bold uppercase tracking-[0.25em] text-white">Refine Catalog</span>
+          <div className="p-6 bg-white border border-neutral-200 mb-8 space-y-6 shadow-sm animate-in fade-in duration-200 rounded-xs">
+            <div className="flex items-center justify-between border-b border-neutral-200 pb-3">
+              <span className="text-xs font-bold uppercase tracking-[0.25em] text-neutral-900">Refine Catalog</span>
               <button
                 onClick={() => setMobileFiltersOpen(false)}
-                className="text-neutral-400 hover:text-white cursor-pointer"
+                className="text-neutral-400 hover:text-black cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -223,13 +223,13 @@ export const ShopPage: React.FC<ShopPageProps> = ({ onNavigateToProduct }) => {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
               {/* Collection */}
               <div>
-                <label className="text-[10px] font-mono uppercase tracking-widest text-neutral-400 block mb-2">
+                <label className="text-[10px] font-mono uppercase tracking-widest text-neutral-500 block mb-2">
                   Collection
                 </label>
                 <select
                   value={selectedCollection}
                   onChange={(e) => setSelectedCollection(e.target.value)}
-                  className="w-full bg-neutral-900 border border-neutral-800 p-2 text-xs text-white uppercase tracking-wider focus:outline-none focus:border-neutral-600"
+                  className="w-full bg-white border border-neutral-300 p-2 text-xs text-neutral-900 uppercase tracking-wider focus:outline-none focus:border-black shadow-xs"
                 >
                   <option value="All">All Collections</option>
                   {collections.map((col) => (
@@ -242,7 +242,7 @@ export const ShopPage: React.FC<ShopPageProps> = ({ onNavigateToProduct }) => {
 
               {/* Size */}
               <div>
-                <label className="text-[10px] font-mono uppercase tracking-widest text-neutral-400 block mb-2">
+                <label className="text-[10px] font-mono uppercase tracking-widest text-neutral-500 block mb-2">
                   Size
                 </label>
                 <div className="flex flex-wrap gap-2">
@@ -252,8 +252,8 @@ export const ShopPage: React.FC<ShopPageProps> = ({ onNavigateToProduct }) => {
                       onClick={() => setSelectedSize(s)}
                       className={`px-3 py-1.5 text-xs font-semibold uppercase tracking-wider border cursor-pointer ${
                         selectedSize === s
-                          ? 'bg-white text-black border-white'
-                          : 'bg-neutral-900 border-neutral-800 text-neutral-300 hover:border-neutral-600'
+                          ? 'bg-black text-white border-black shadow-xs'
+                          : 'bg-white border-neutral-300 text-neutral-700 hover:border-black'
                       }`}
                     >
                       {s}
@@ -264,13 +264,13 @@ export const ShopPage: React.FC<ShopPageProps> = ({ onNavigateToProduct }) => {
 
               {/* Color */}
               <div>
-                <label className="text-[10px] font-mono uppercase tracking-widest text-neutral-400 block mb-2">
+                <label className="text-[10px] font-mono uppercase tracking-widest text-neutral-500 block mb-2">
                   Color Shade
                 </label>
                 <select
                   value={selectedColor}
                   onChange={(e) => setSelectedColor(e.target.value)}
-                  className="w-full bg-neutral-900 border border-neutral-800 p-2 text-xs text-white uppercase tracking-wider focus:outline-none focus:border-neutral-600"
+                  className="w-full bg-white border border-neutral-300 p-2 text-xs text-neutral-900 uppercase tracking-wider focus:outline-none focus:border-black shadow-xs"
                 >
                   {allColors.map((c) => (
                     <option key={c} value={c}>
@@ -281,16 +281,16 @@ export const ShopPage: React.FC<ShopPageProps> = ({ onNavigateToProduct }) => {
               </div>
             </div>
 
-            <div className="flex justify-end gap-3 pt-3 border-t border-neutral-800">
+            <div className="flex justify-end gap-3 pt-3 border-t border-neutral-200">
               <button
                 onClick={resetFilters}
-                className="px-4 py-2 border border-neutral-800 text-xs font-semibold uppercase tracking-wider text-neutral-400 hover:text-white cursor-pointer"
+                className="px-4 py-2 border border-neutral-300 text-xs font-semibold uppercase tracking-wider text-neutral-600 hover:text-black cursor-pointer shadow-xs"
               >
                 Reset
               </button>
               <button
                 onClick={() => setMobileFiltersOpen(false)}
-                className="px-6 py-2 bg-white text-black text-xs font-bold uppercase tracking-wider hover:bg-neutral-200 cursor-pointer"
+                className="px-6 py-2 bg-black text-white text-xs font-bold uppercase tracking-wider hover:bg-neutral-800 cursor-pointer shadow-sm"
               >
                 Apply
               </button>
@@ -300,16 +300,16 @@ export const ShopPage: React.FC<ShopPageProps> = ({ onNavigateToProduct }) => {
 
         {/* Product Grid */}
         {filteredProducts.length === 0 ? (
-          <div className="py-24 text-center border border-neutral-800/80 bg-neutral-900/30">
-            <h3 className="text-base font-bold uppercase tracking-wider text-neutral-200">
+          <div className="py-24 text-center border border-neutral-200 bg-white rounded-xs shadow-xs">
+            <h3 className="text-base font-bold uppercase tracking-wider text-neutral-900">
               No matching garments found
             </h3>
-            <p className="text-xs text-neutral-400 mt-2 max-w-sm mx-auto">
+            <p className="text-xs text-neutral-600 mt-2 max-w-sm mx-auto font-light">
               We couldn't find any products matching your active filters. Try adjusting or resetting your selections.
             </p>
             <button
               onClick={resetFilters}
-              className="mt-6 px-6 py-2.5 bg-white text-black text-xs font-bold uppercase tracking-widest hover:bg-neutral-200 cursor-pointer"
+              className="mt-6 px-6 py-2.5 bg-black text-white text-xs font-bold uppercase tracking-widest hover:bg-neutral-800 cursor-pointer shadow-sm"
             >
               Reset Filters
             </button>

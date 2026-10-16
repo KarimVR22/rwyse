@@ -16,6 +16,7 @@ import {
   AlertCircle,
   ExternalLink,
   MessageCircle,
+  RotateCcw,
 } from 'lucide-react';
 
 export const AdminOrders: React.FC = () => {
@@ -25,6 +26,7 @@ export const AdminOrders: React.FC = () => {
     deleteOrder,
     refreshOrdersFromCloud,
     clearAllDemoOrders,
+    resetAllRevenuesToZero,
     isCloudSynced,
     isRefreshingOrders,
     siteSettings,
@@ -134,6 +136,19 @@ export const AdminOrders: React.FC = () => {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={async () => {
+              if (window.confirm('Voulez-vous réinitialiser tous les revenus et commandes d\'administration à 0 DT ?')) {
+                await resetAllRevenuesToZero();
+              }
+            }}
+            className="px-3 py-2 bg-neutral-900 border border-neutral-700 hover:border-red-500 text-neutral-300 hover:text-red-400 text-xs font-mono uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer shadow-md"
+            title="Mettre tous les revenus et commandes d'admin à 0 DT"
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
+            <span>Mettre Revenus à 0 DT</span>
+          </button>
+
           {orders.length > 0 && (
             <button
               onClick={async () => {

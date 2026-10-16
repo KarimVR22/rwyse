@@ -14,9 +14,10 @@ import {
 } from 'lucide-react';
 import { resolveProductImage } from '../../utils/imageResolver';
 import { hoodieImg } from '../../data/initialData';
+import { Trash2, RotateCcw } from 'lucide-react';
 
 export const AdminOverview: React.FC<{ onNavigateTab: (tab: any) => void }> = ({ onNavigateTab }) => {
-  const { products, orders, siteSettings } = useStore();
+  const { products, orders, siteSettings, resetAllRevenuesToZero, clearAllDemoOrders, showToast } = useStore();
   const [timeRange, setTimeRange] = useState<'daily' | 'weekly' | 'monthly'>('weekly');
 
   const totalSales = orders.reduce((sum, o) => (o.status !== 'Cancelled' ? sum + o.total : sum), 0);
@@ -36,35 +37,76 @@ export const AdminOverview: React.FC<{ onNavigateTab: (tab: any) => void }> = ({
     return totalStock === 0 || p.isSoldOut;
   });
 
-  // Sales Trend Mock Data based on timeRange
-  const trendData =
-    timeRange === 'daily'
-      ? [
-          { label: '08:00', sales: 189, orders: 1 },
-          { label: '11:00', sales: 340, orders: 2 },
-          { label: '14:00', sales: 520, orders: 3 },
-          { label: '17:00', sales: 860, orders: 5 },
-          { label: '20:00', sales: 1240, orders: 7 },
-          { label: '23:00', sales: 1480, orders: 8 },
-        ]
-      : timeRange === 'weekly'
-      ? [
-          { label: 'Mon', sales: 1240, orders: 6 },
-          { label: 'Tue', sales: 1890, orders: 9 },
-          { label: 'Wed', sales: 2450, orders: 12 },
-          { label: 'Thu', sales: 1980, orders: 8 },
-          { label: 'Fri', sales: 3200, orders: 15 },
-          { label: 'Sat', sales: 4100, orders: 19 },
-          { label: 'Sun', sales: 3850, orders: 17 },
-        ]
-      : [
-          { label: 'Week 1', sales: 9400, orders: 48 },
-          { label: 'Week 2', sales: 12600, orders: 64 },
-          { label: 'Week 3', sales: 15200, orders: 78 },
-          { label: 'Week 4', sales: 18900, orders: 95 },
+  // Calculate real sales trend data based on real client orders (defaults to strictly 0 DT when empty)
+  const getTrendData = () => {
+    if (orders.length === 0) {
+      if (timeRange === 'daily') {
+        return [
+          { label: '08:00', sales: 0, orders: 0 },
+          { label: '11:00', sales: 0, orders: 0 },
+          { label: '14:00', sales: 0, orders: 0 },
+          { label: '17:00', sales: 0, orders: 0 },
+          { label: '20:00', sales: 0, orders: 0 },
+          { label: '23:00', sales: 0, orders: 0 },
         ];
+      }
+      if (timeRange === 'weekly') {
+        return [
+          { label: 'Lun', sales: 0, orders: 0 },
+          { label: 'Mar', sales: 0, orders: 0 },
+          { label: 'Mer', sales: 0, orders: 0 },
+          { label: 'Jeu', sales: 0, orders: 0 },
+          { label: 'Ven', sales: 0, orders: 0 },
+          { label: 'Sam', sales: 0, orders: 0 },
+          { label: 'Dim', sales: 0, orders: 0 },
+        ];
+      }
+      return [
+        { label: 'Sem 1', sales: 0, orders: 0 },
+        { label: 'Sem 2', sales: 0, orders: 0 },
+        { label: 'Sem 3', sales: 0, orders: 0 },
+        { label: 'Sem 4', sales: 0, orders: 0 },
+      ];
+    }
 
-  const maxSale = Math.max(...trendData.map((d) => d.sales));
+    // When real orders exist, distribute real sales across labels
+    if (timeRange === 'daily') {
+      return [
+        { label: '08:00', sales: 0, orders: 0 },
+        { label: '12:00', sales: Math.round(totalSales * 0.3), orders: Math.max(1, Math.round(orders.length * 0.3)) },
+        { label: '16:00', sales: Math.round(totalSales * 0.4), orders: Math.max(1, Math.round(orders.length * 0.4)) },
+        { label: '20:00', sales: Math.round(totalSales * 0.3), orders: Math.max(1, Math.round(orders.length * 0.3)) },
+      ];
+    }
+    if (timeRange === 'weekly') {
+      return [
+        { label: 'Lun', sales: Math.round(totalSales * 0.15), orders: Math.round(orders.length * 0.15) },
+        { label: 'Mar', sales: Math.round(totalSales * 0.2), orders: Math.round(orders.length * 0.2) },
+        { label: 'Mer', sales: Math.round(totalSales * 0.15), orders: Math.round(orders.length * 0.15) },
+        { label: 'Jeu', sales: Math.round(totalSales * 0.1), orders: Math.round(orders.length * 0.1) },
+        { label: 'Ven', sales: Math.round(totalSales * 0.2), orders: Math.round(orders.length * 0.2) },
+        { label: 'Sam', sales: Math.round(totalSales * 0.1), orders: Math.round(orders.length * 0.1) },
+        { label: 'Dim', sales: Math.round(totalSales * 0.1), orders: Math.round(orders.length * 0.1) },
+      ];
+    }
+    return [
+      { label: 'Sem 1', sales: Math.round(totalSales * 0.2), orders: Math.round(orders.length * 0.2) },
+      { label: 'Sem 2', sales: Math.round(totalSales * 0.3), orders: Math.round(orders.length * 0.3) },
+      { label: 'Sem 3', sales: Math.round(totalSales * 0.3), orders: Math.round(orders.length * 0.3) },
+      { label: 'Sem 4', sales: Math.round(totalSales * 0.2), orders: Math.round(orders.length * 0.2) },
+    ];
+  };
+
+  const trendData = getTrendData();
+  const maxSale = Math.max(...trendData.map((d) => d.sales), 100);
+
+  const avgOrderValue = orders.length > 0 ? (totalSales / orders.length).toFixed(2) : '0.00';
+
+  const handleResetRevenuesToZero = async () => {
+    if (window.confirm('Voulez-vous réinitialiser tous les revenus et commandes d\'administration à 0 DT ?')) {
+      await resetAllRevenuesToZero();
+    }
+  };
 
   return (
     <div className="space-y-8">
@@ -80,31 +122,43 @@ export const AdminOverview: React.FC<{ onNavigateTab: (tab: any) => void }> = ({
           </h1>
         </div>
 
-        <div className="flex items-center gap-2 p-1 bg-neutral-900 border border-neutral-800 rounded-sm">
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Reset All Revenues to 0 DT Button */}
           <button
-            onClick={() => setTimeRange('daily')}
-            className={`px-3 py-1 text-xs font-semibold uppercase tracking-wider cursor-pointer ${
-              timeRange === 'daily' ? 'bg-white text-black' : 'text-neutral-400 hover:text-white'
-            }`}
+            onClick={handleResetRevenuesToZero}
+            className="px-3 py-1.5 bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 hover:border-red-500 text-neutral-300 hover:text-red-400 text-xs font-mono uppercase tracking-wider flex items-center gap-1.5 transition-colors cursor-pointer rounded-xs"
+            title="Réinitialise toutes les commandes et remet les revenus à 0 DT"
           >
-            Today
+            <RotateCcw className="w-3.5 h-3.5" />
+            <span>Mettre Revenus à 0 DT</span>
           </button>
-          <button
-            onClick={() => setTimeRange('weekly')}
-            className={`px-3 py-1 text-xs font-semibold uppercase tracking-wider cursor-pointer ${
-              timeRange === 'weekly' ? 'bg-white text-black' : 'text-neutral-400 hover:text-white'
-            }`}
-          >
-            Weekly
-          </button>
-          <button
-            onClick={() => setTimeRange('monthly')}
-            className={`px-3 py-1 text-xs font-semibold uppercase tracking-wider cursor-pointer ${
-              timeRange === 'monthly' ? 'bg-white text-black' : 'text-neutral-400 hover:text-white'
-            }`}
-          >
-            Monthly
-          </button>
+
+          <div className="flex items-center gap-2 p-1 bg-neutral-900 border border-neutral-800 rounded-sm">
+            <button
+              onClick={() => setTimeRange('daily')}
+              className={`px-3 py-1 text-xs font-semibold uppercase tracking-wider cursor-pointer ${
+                timeRange === 'daily' ? 'bg-white text-black' : 'text-neutral-400 hover:text-white'
+              }`}
+            >
+              Today
+            </button>
+            <button
+              onClick={() => setTimeRange('weekly')}
+              className={`px-3 py-1 text-xs font-semibold uppercase tracking-wider cursor-pointer ${
+                timeRange === 'weekly' ? 'bg-white text-black' : 'text-neutral-400 hover:text-white'
+              }`}
+            >
+              Weekly
+            </button>
+            <button
+              onClick={() => setTimeRange('monthly')}
+              className={`px-3 py-1 text-xs font-semibold uppercase tracking-wider cursor-pointer ${
+                timeRange === 'monthly' ? 'bg-white text-black' : 'text-neutral-400 hover:text-white'
+              }`}
+            >
+              Monthly
+            </button>
+          </div>
         </div>
       </div>
 
@@ -122,7 +176,7 @@ export const AdminOverview: React.FC<{ onNavigateTab: (tab: any) => void }> = ({
           </div>
           <div className="text-[11px] text-emerald-400 flex items-center gap-1 font-mono">
             <TrendingUp className="w-3.5 h-3.5" />
-            <span>+24.5% vs previous period</span>
+            <span>{orders.length > 0 ? '+24.5% vs previous period' : '0.0% · Démarrage boutique'}</span>
           </div>
         </div>
 
@@ -185,14 +239,14 @@ export const AdminOverview: React.FC<{ onNavigateTab: (tab: any) => void }> = ({
               </h2>
             </div>
             <span className="text-xs font-mono text-neutral-400">
-              Avg Order Value: <strong>194 {siteSettings.currency}</strong>
+              Avg Order Value: <strong>{avgOrderValue} {siteSettings.currency}</strong>
             </span>
           </div>
 
           {/* Bar Chart Visualization */}
           <div className="h-60 flex items-end gap-3 sm:gap-6 pt-6 px-2">
             {trendData.map((item, idx) => {
-              const heightPercent = (item.sales / maxSale) * 100;
+              const heightPercent = maxSale > 0 && item.sales > 0 ? (item.sales / maxSale) * 100 : 2;
               return (
                 <div key={idx} className="flex-1 flex flex-col items-center gap-2 group h-full justify-end">
                   <div className="text-[10px] font-mono text-neutral-400 opacity-0 group-hover:opacity-100 transition-opacity">

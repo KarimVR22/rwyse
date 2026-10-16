@@ -1,22 +1,28 @@
 import React, { useState } from 'react';
 import { useStore } from '../../context/StoreContext';
-import { BarChart3, TrendingUp, DollarSign, ShoppingCart, Percent, Users, ArrowUpRight } from 'lucide-react';
+import { BarChart3, TrendingUp, DollarSign, ShoppingCart, Percent, Users, ArrowUpRight, RotateCcw } from 'lucide-react';
 
 export const AdminAnalytics: React.FC = () => {
-  const { products, orders, siteSettings } = useStore();
+  const { products, orders, siteSettings, resetAllRevenuesToZero, clearAllDemoOrders, showToast } = useStore();
   const [period, setPeriod] = useState<'daily' | 'weekly' | 'monthly' | 'yearly'>('monthly');
 
   const totalRevenue = orders.reduce((sum, o) => (o.status !== 'Cancelled' ? sum + o.total : sum), 0);
   const avgOrderValue = orders.length > 0 ? totalRevenue / orders.length : 0;
-  const conversionRate = 3.8;
-  const customerGrowth = 18.4;
+  const conversionRate = orders.length > 0 ? 3.8 : 0;
+  const customerGrowth = orders.length > 0 ? 18.4 : 0;
 
   const revenueBreakdown = [
-    { category: 'Hoodies (500 GSM)', percent: 48, revenue: totalRevenue * 0.48 },
-    { category: 'Pants & Cargo', percent: 28, revenue: totalRevenue * 0.28 },
-    { category: 'T-Shirts (Raw Wash)', percent: 16, revenue: totalRevenue * 0.16 },
-    { category: 'Jackets & Accessories', percent: 8, revenue: totalRevenue * 0.08 },
+    { category: 'Hoodies (500 GSM)', percent: orders.length > 0 ? 48 : 0, revenue: totalRevenue * 0.48 },
+    { category: 'Pants & Cargo', percent: orders.length > 0 ? 28 : 0, revenue: totalRevenue * 0.28 },
+    { category: 'T-Shirts (Raw Wash)', percent: orders.length > 0 ? 16 : 0, revenue: totalRevenue * 0.16 },
+    { category: 'Jackets & Accessories', percent: orders.length > 0 ? 8 : 0, revenue: totalRevenue * 0.08 },
   ];
+
+  const handleResetRevenues = async () => {
+    if (window.confirm('Voulez-vous réinitialiser tous les indicateurs et revenus à 0 DT ?')) {
+      await resetAllRevenuesToZero();
+    }
+  };
 
   return (
     <div className="space-y-8">
@@ -32,18 +38,29 @@ export const AdminAnalytics: React.FC = () => {
           </h1>
         </div>
 
-        <div className="flex items-center gap-1.5 p-1 bg-neutral-900 border border-neutral-800">
-          {(['daily', 'weekly', 'monthly', 'yearly'] as const).map((p) => (
-            <button
-              key={p}
-              onClick={() => setPeriod(p)}
-              className={`px-3 py-1 text-xs uppercase font-semibold tracking-wider cursor-pointer ${
-                period === p ? 'bg-white text-black' : 'text-neutral-400 hover:text-white'
-              }`}
-            >
-              {p}
-            </button>
-          ))}
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            onClick={handleResetRevenues}
+            className="px-3 py-1.5 bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 hover:border-red-500 text-neutral-300 hover:text-red-400 text-xs font-mono uppercase tracking-wider flex items-center gap-1.5 transition-colors cursor-pointer rounded-xs"
+            title="Remettre tous les revenus à 0 DT"
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
+            <span>Mettre Revenus à 0 DT</span>
+          </button>
+
+          <div className="flex items-center gap-1.5 p-1 bg-neutral-900 border border-neutral-800">
+            {(['daily', 'weekly', 'monthly', 'yearly'] as const).map((p) => (
+              <button
+                key={p}
+                onClick={() => setPeriod(p)}
+                className={`px-3 py-1 text-xs uppercase font-semibold tracking-wider cursor-pointer ${
+                  period === p ? 'bg-white text-black' : 'text-neutral-400 hover:text-white'
+                }`}
+              >
+                {p}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -57,7 +74,8 @@ export const AdminAnalytics: React.FC = () => {
             {totalRevenue.toFixed(2)} <span className="text-xs font-normal text-neutral-400">{siteSettings.currency}</span>
           </div>
           <span className="text-xs text-emerald-400 font-mono flex items-center gap-1">
-            <TrendingUp className="w-3.5 h-3.5" /> +32% increase this month
+            <TrendingUp className="w-3.5 h-3.5" />
+            <span>{orders.length > 0 ? '+32% progression ce mois' : '0.0% · Démarrage boutique (0 DT)'}</span>
           </span>
         </div>
 
@@ -140,19 +158,19 @@ export const AdminAnalytics: React.FC = () => {
           <div className="space-y-3 text-xs font-mono">
             <div className="flex justify-between p-3 bg-neutral-900/60 border border-neutral-800">
               <span className="text-white">1. Grand Tunis (Lac, Ennasr, Marsa)</span>
-              <span className="font-bold text-white">58% of orders</span>
+              <span className="font-bold text-white">{orders.length > 0 ? '58% des commandes' : '0 commande'}</span>
             </div>
             <div className="flex justify-between p-3 bg-neutral-900/60 border border-neutral-800">
               <span className="text-white">2. Sahel (Sousse, Monastir)</span>
-              <span className="font-bold text-white">22% of orders</span>
+              <span className="font-bold text-white">{orders.length > 0 ? '22% des commandes' : '0 commande'}</span>
             </div>
             <div className="flex justify-between p-3 bg-neutral-900/60 border border-neutral-800">
               <span className="text-white">3. Sfax Hub</span>
-              <span className="font-bold text-white">12% of orders</span>
+              <span className="font-bold text-white">{orders.length > 0 ? '12% des commandes' : '0 commande'}</span>
             </div>
             <div className="flex justify-between p-3 bg-neutral-900/60 border border-neutral-800">
-              <span className="text-white">4. Other Governorates</span>
-              <span className="font-bold text-white">8% of orders</span>
+              <span className="text-white">4. Autres Gouvernorats</span>
+              <span className="font-bold text-white">{orders.length > 0 ? '8% des commandes' : '0 commande'}</span>
             </div>
           </div>
         </div>

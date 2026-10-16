@@ -99,8 +99,8 @@ interface StoreContextType {
   clearNotifications: () => void;
   logAuditAction: (action: string, details: string, adminEmail?: string) => void;
   syncAllProductsToCloud: () => Promise<void>;
-  importProducts: (newProducts: Omit<Product, 'id' | 'createdAt'>[]) => Promise<Product[]>;
   clearAllDemoOrders: () => Promise<void>;
+  resetAllRevenuesToZero: () => Promise<void>;
 }
 
 const DEMO_ORDER_NUMBERS = new Set(['RWY-84920', 'RWY-84921', 'RWY-84922', 'RWY-84923']);
@@ -190,6 +190,12 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const [orders, setOrders] = useState<Order[]>(() => {
     try {
+      const resetDone = localStorage.getItem('rwyse_revenue_zero_cleared_v2');
+      if (!resetDone) {
+        localStorage.setItem('rwyse_revenue_zero_cleared_v2', 'true');
+        localStorage.setItem('rwyse_orders_v6', JSON.stringify([]));
+        return [];
+      }
       const savedDeleted = localStorage.getItem('rwyse_deleted_order_ids_v6');
       const deletedSet = new Set<string>(savedDeleted ? JSON.parse(savedDeleted) : []);
       const savedDeletedCust = localStorage.getItem('rwyse_deleted_customer_keys_v6');
@@ -210,7 +216,6 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         return true;
       });
 
-      // Synchronize cleaned real orders back to localStorage immediately
       localStorage.setItem('rwyse_orders_v6', JSON.stringify(realOrders));
       return realOrders;
     } catch {
@@ -240,7 +245,16 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const [siteSettings, setSiteSettings] = useState<SiteSettings>(() => {
     const saved = localStorage.getItem('rwyse_settings_v6');
-    return saved ? JSON.parse(saved) : initialSiteSettings;
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (!parsed.instagramUrl || parsed.instagramUrl.includes('rwyse.studios')) {
+          parsed.instagramUrl = 'https://www.instagram.com/rwy.se/';
+        }
+        return { ...initialSiteSettings, ...parsed };
+      } catch {}
+    }
+    return initialSiteSettings;
   });
 
   const [notifications, setNotifications] = useState<AdminNotification[]>(() => {
@@ -1398,6 +1412,19 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
+  const resetAllRevenuesToZero = async () => {
+    try {
+      await clearAllDemoOrders();
+      localStorage.setItem('rwyse_orders_v6', JSON.stringify([]));
+      localStorage.setItem('rwyse_revenue_zero_cleared_v2', 'true');
+      setOrders([]);
+      logAuditAction('Remise à 0 des Revenus', 'Tous les revenus de la boutique ont été réinitialisés à 0 DT.');
+      showToast('Tous les revenus et commandes d\'administration ont été réinitialisés à 0 DT.');
+    } catch (err) {
+      console.warn('Error resetting revenues:', err);
+    }
+  };
+
   // Delivery Zones
   const updateDeliveryZone = async (zone: DeliveryZone) => {
     setDeliveryZones((prev) =>
@@ -1588,6 +1615,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         isSyncingCatalog,
         importProducts,
         clearAllDemoOrders,
+        resetAllRevenuesToZero,
       }}
     >
       {children}

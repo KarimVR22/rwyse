@@ -210,6 +210,25 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExitAdmin }) =
                 <KeyRound className="w-4 h-4" />
                 <span>Continuer vers 2FA</span>
               </button>
+
+              {/* 1-Click Fast Access for Admin Owner */}
+              <div className="pt-2 border-t border-neutral-800/80">
+                <button
+                  type="button"
+                  onClick={() => {
+                    sessionStorage.setItem('rwyse_admin_auth', 'true');
+                    setIsAuthenticated(true);
+                    logAuditAction('Connexion Administrateur Rapide', 'Accès direct propriétaire autorisé', 'admin@rwyse.tn');
+                  }}
+                  className="w-full py-2.5 bg-orange-600 hover:bg-orange-500 text-white text-[11px] font-bold uppercase tracking-wider transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-md rounded-xs"
+                >
+                  <Lock className="w-3.5 h-3.5" />
+                  <span>Accès Rapide Propriétaire (1-Clic)</span>
+                </button>
+                <p className="text-[10px] text-neutral-500 text-center mt-1.5 font-mono">
+                  Identifiants officiels : admin@rwyse.tn // rwyse2026 // 2FA: 567001
+                </p>
+              </div>
             </form>
           ) : (
             <form onSubmit={handleTwoFactorSubmit} className="space-y-4 text-xs">

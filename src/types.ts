@@ -170,7 +170,49 @@ export interface SiteSettings {
   isInstagramActive: boolean;
   announcementText: string;
   announcementActive: boolean;
+  infolineText?: string;
+  infolineActive?: boolean;
+  infolineSpeed?: 'slow' | 'normal' | 'fast';
+  instagramUrl?: string;
+  adminPhone?: string;
+  whatsappNumber?: string;
+  storeTabActive?: boolean;
+  storeOpeningMessage?: string;
+  storeOpeningSubtitle?: string;
+  storeOpeningDate?: string;
+  showFloatingControls?: boolean;
   currency: string;
+  // Hero dynamic badges & micro-copy
+  heroBadgeText?: string;
+  heroOriginTag?: string;
+  heroFabricTag?: string;
+  heroCodTag?: string;
+  // Marquee ticker
+  marqueeText?: string;
+  // Spotlight campaign
+  spotlightBadge?: string;
+  spotlightCtaText?: string;
+  spotlightCountdownHours?: number;
+  // Catalog & Silhouettes
+  catalogBadge?: string;
+  catalogTitle?: string;
+  // Lookbook
+  lookbookBadge?: string;
+  lookbookTitle?: string;
+  // Brand Manifesto / Foundation
+  manifestoBadge?: string;
+  manifestoTitle?: string;
+  manifestoParagraph1?: string;
+  manifestoParagraph2?: string;
+  manifestoButtonText?: string;
+  // Instagram
+  instagramSectionTitle?: string;
+  instagramFollowText?: string;
+  // Visual effects & rotation
+  logoAutoRotate?: boolean;
+  bgPatternActive?: boolean;
+  shippingFee?: number;
+  shippingFreeThreshold?: number;
 }
 
 export interface CustomerProfile {

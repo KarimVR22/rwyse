@@ -115,22 +115,22 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
   const relatedProducts = products.filter((p) => p.id !== product.id).slice(0, 4);
 
   return (
-    <div className="w-full bg-[#0b0b0d] text-white min-h-screen py-6 sm:py-12 pb-28 md:pb-16">
+    <div className="w-full bg-[#FAFAFC] text-neutral-900 min-h-screen py-6 sm:py-12 pb-28 md:pb-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Breadcrumbs */}
-        <div className="flex items-center gap-2 text-[11px] text-neutral-400 uppercase tracking-widest mb-8">
-          <button onClick={() => onNavigate('/')} className="hover:text-white transition-colors cursor-pointer">
+        <div className="flex items-center gap-2 text-[11px] text-neutral-500 uppercase tracking-widest mb-8">
+          <button onClick={() => onNavigate('/')} className="hover:text-black transition-colors cursor-pointer">
             Home
           </button>
           <span>/</span>
-          <button onClick={() => onNavigate('/shop')} className="hover:text-white transition-colors cursor-pointer">
+          <button onClick={() => onNavigate('/shop')} className="hover:text-black transition-colors cursor-pointer">
             Catalog
           </button>
           <span>/</span>
-          <span className="text-neutral-500">{product.category}</span>
+          <span className="text-neutral-400">{product.category}</span>
           <span>/</span>
-          <span className="text-white truncate max-w-[200px]">{product.name}</span>
+          <span className="text-neutral-900 font-semibold truncate max-w-[200px]">{product.name}</span>
         </div>
 
         {/* Contiguous Purchase Module Layout */}
@@ -141,14 +141,14 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
             
             {/* Optional 360 Switcher only if 360 frames exist */}
             {(activeColor.threeSixtyFrames?.length || product.threeSixtyFrames?.length) ? (
-              <div className="flex items-center gap-2 p-1.5 bg-[#101015] border border-neutral-800 rounded-sm">
+              <div className="flex items-center gap-2 p-1.5 bg-neutral-100 border border-neutral-200 rounded-sm">
                 <button
                   type="button"
                   onClick={() => setMediaMode('photos')}
                   className={`flex-1 py-2 px-3 text-[11px] font-mono uppercase tracking-[0.2em] font-semibold transition-all flex items-center justify-center gap-2 cursor-pointer ${
                     mediaMode === 'photos'
-                      ? 'bg-white text-black shadow-md'
-                      : 'text-neutral-400 hover:text-white'
+                      ? 'bg-black text-white shadow-xs'
+                      : 'text-neutral-600 hover:text-black'
                   }`}
                 >
                   <ImageIcon className="w-3.5 h-3.5" />
@@ -160,8 +160,8 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                   onClick={() => setMediaMode('360')}
                   className={`flex-1 py-2 px-3 text-[11px] font-mono uppercase tracking-[0.2em] font-semibold transition-all flex items-center justify-center gap-2 cursor-pointer ${
                     mediaMode === '360'
-                      ? 'bg-white text-black shadow-md'
-                      : 'text-neutral-400 hover:text-white'
+                      ? 'bg-black text-white shadow-xs'
+                      : 'text-neutral-600 hover:text-black'
                   }`}
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
@@ -178,7 +178,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
               />
             ) : (
               <>
-                <div className="relative aspect-[3/4] w-full overflow-hidden bg-[#141418] border border-white/[0.06]">
+                <div className="relative aspect-[3/4] w-full overflow-hidden bg-neutral-100 border border-neutral-200">
                   <AnimatePresence mode="wait">
                     <motion.img
                       key={currentImage}
@@ -196,11 +196,11 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                   {/* Status Indicator */}
                   <div className="absolute top-4 left-4 z-10">
                     {product.isSoldOut ? (
-                      <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-neutral-400 bg-neutral-900/90 px-3 py-1 border border-neutral-700">
+                      <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-neutral-600 bg-neutral-100/90 px-3 py-1 border border-neutral-300">
                         Archived · Sold Out
                       </span>
                     ) : product.isNewDrop ? (
-                      <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-white bg-black/85 px-3 py-1 border border-white/20">
+                      <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-white bg-black px-3 py-1 border border-black shadow-xs">
                         Drop 01 Official
                       </span>
                     ) : null}
@@ -211,8 +211,8 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                     onClick={() => toggleWishlist(product.id)}
                     className={`absolute top-4 right-4 p-2.5 rounded-full transition-all cursor-pointer z-10 ${
                       inWishlist
-                        ? 'bg-white text-black'
-                        : 'bg-black/50 text-neutral-300 hover:text-white hover:bg-black/80 backdrop-blur-xs'
+                        ? 'bg-black text-white shadow-md'
+                        : 'bg-white/90 text-neutral-700 hover:text-black hover:bg-white backdrop-blur-xs border border-neutral-200 shadow-xs'
                     }`}
                     aria-label="Save to wishlist"
                   >
@@ -227,10 +227,10 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                       <button
                         key={idx}
                         onClick={() => setSelectedImageIdx(idx)}
-                        className={`aspect-[3/4] overflow-hidden bg-neutral-900 border transition-all cursor-pointer ${
+                        className={`aspect-[3/4] overflow-hidden bg-neutral-100 border transition-all cursor-pointer ${
                           selectedImageIdx === idx
-                            ? 'border-white opacity-100 ring-1 ring-white'
-                            : 'border-neutral-800 opacity-60 hover:opacity-100'
+                            ? 'border-black opacity-100 ring-1 ring-black shadow-xs'
+                            : 'border-neutral-200 opacity-70 hover:opacity-100'
                         }`}
                       >
                         <img
@@ -247,11 +247,11 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
             )}
 
             {/* Editorial Lookbook Craft Detail Box */}
-            <div className="mt-6 p-6 bg-neutral-900/40 border border-neutral-800/80 hidden sm:block">
-              <span className="text-[10px] font-mono uppercase tracking-[0.25em] text-neutral-400 block mb-2">
+            <div className="mt-6 p-6 bg-neutral-50 border border-neutral-200 hidden sm:block rounded-xs">
+              <span className="text-[10px] font-mono uppercase tracking-[0.25em] text-neutral-500 block mb-2">
                 BESPOKE CRAFTSMANSHIP DIRECTIVE
               </span>
-              <p className="text-xs text-neutral-300 leading-relaxed">
+              <p className="text-xs text-neutral-600 leading-relaxed font-light">
                 Engineered with high-density loopback knitting techniques in Tunisia. The garment undergoes an artisanal preshrink process to ensure the architectural shape, collar stance, and drape remain invariant across repeated wear.
               </p>
             </div>
@@ -262,13 +262,13 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
           <div className="lg:col-span-5 lg:sticky lg:top-24 space-y-6">
             
             {/* Header Lockup */}
-            <div className="border-b border-neutral-800 pb-6">
-              <div className="flex items-center justify-between text-xs uppercase tracking-widest text-neutral-400 mb-2">
+            <div className="border-b border-neutral-200 pb-6">
+              <div className="flex items-center justify-between text-xs uppercase tracking-widest text-neutral-500 mb-2">
                 <span>{product.category} · {product.collection}</span>
-                <span className="font-mono text-neutral-500">SKU: {product.sku}</span>
+                <span className="font-mono text-neutral-400">SKU: {product.sku}</span>
               </div>
 
-              <h1 className="text-2xl sm:text-3xl font-display font-extrabold uppercase text-white tracking-tight leading-snug">
+              <h1 className="text-2xl sm:text-3xl font-display font-extrabold uppercase text-neutral-900 tracking-tight leading-snug">
                 {product.name}
               </h1>
 
@@ -276,24 +276,24 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
               <div className="mt-4 flex items-baseline gap-3">
                 {product.salePrice && product.salePrice < product.price ? (
                   <>
-                    <span className="text-2xl font-bold font-mono text-white">
+                    <span className="text-2xl font-bold font-mono text-neutral-900">
                       {product.salePrice.toFixed(2)} {siteSettings.currency}
                     </span>
                     <span className="text-sm font-mono text-neutral-400 line-through">
                       {product.price.toFixed(2)} {siteSettings.currency}
                     </span>
-                    <span className="text-[11px] font-mono text-emerald-400 uppercase tracking-wider">
+                    <span className="text-[11px] font-mono text-emerald-700 uppercase tracking-wider font-semibold">
                       Save {(product.price - product.salePrice).toFixed(0)} {siteSettings.currency}
                     </span>
                   </>
                 ) : (
-                  <span className="text-2xl font-bold font-mono text-white">
+                  <span className="text-2xl font-bold font-mono text-neutral-900">
                     {product.price.toFixed(2)} {siteSettings.currency}
                   </span>
                 )}
               </div>
 
-              <p className="mt-3 text-xs text-neutral-400 leading-relaxed font-light">
+              <p className="mt-3 text-xs text-neutral-600 leading-relaxed font-light">
                 {product.description}
               </p>
             </div>
@@ -301,8 +301,8 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
             {/* Color Swatches */}
             <div>
               <div className="flex items-center justify-between text-xs tracking-wider uppercase mb-2.5">
-                <span className="text-neutral-400">Color Palette:</span>
-                <span className="font-semibold text-white font-mono">{activeColor.name}</span>
+                <span className="text-neutral-500">Color Palette:</span>
+                <span className="font-semibold text-neutral-900 font-mono">{activeColor.name}</span>
               </div>
               <div className="flex items-center gap-2.5">
                 {product.colors.map((c, idx) => (
@@ -314,8 +314,8 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                     }}
                     className={`w-8 h-8 rounded-full border-2 transition-all cursor-pointer flex items-center justify-center ${
                       selectedColorIdx === idx
-                        ? 'border-white scale-110 shadow-md'
-                        : 'border-neutral-700 hover:border-neutral-400'
+                        ? 'border-black scale-110 shadow-sm'
+                        : 'border-neutral-300 hover:border-neutral-500'
                     }`}
                     style={{ backgroundColor: c.hex }}
                     title={c.name}
@@ -331,17 +331,17 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
             {/* Size Selector */}
             <div>
               <div className="flex items-center justify-between text-xs tracking-wider uppercase mb-2.5">
-                <span className="text-neutral-400">Available Sizes:</span>
+                <span className="text-neutral-500">Available Sizes:</span>
                 <div className="flex items-center gap-3">
                   <button
                     onClick={() => setShowFitCalculator(!showFitCalculator)}
-                    className="inline-flex items-center gap-1 text-[11px] text-blue-400 hover:text-blue-300 underline cursor-pointer tracking-wider"
+                    className="inline-flex items-center gap-1 text-[11px] text-blue-700 hover:text-blue-900 underline cursor-pointer tracking-wider font-medium"
                   >
                     <span>{showFitCalculator ? 'Hide Fit Advisor' : 'Find My Size'}</span>
                   </button>
                   <button
                     onClick={() => setIsSizeGuideOpen(true)}
-                    className="inline-flex items-center gap-1.5 text-[11px] text-neutral-300 hover:text-white underline cursor-pointer tracking-wider"
+                    className="inline-flex items-center gap-1.5 text-[11px] text-neutral-600 hover:text-black underline cursor-pointer tracking-wider"
                   >
                     <Ruler className="w-3.5 h-3.5" />
                     <span>Size Chart</span>
@@ -351,17 +351,17 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
 
               {/* Interactive Fit Calculator */}
               {showFitCalculator && (
-                <div className="mb-4 p-4 bg-neutral-900/90 border border-neutral-700/80 rounded-xs space-y-3 animate-in fade-in duration-200">
-                  <div className="flex items-center justify-between text-[11px] font-mono uppercase text-neutral-300">
-                    <span className="font-semibold text-white">Interactive Fit Simulator</span>
-                    <span className="text-blue-400">RWYSE AI Fit Guide</span>
+                <div className="mb-4 p-4 bg-neutral-50 border border-neutral-200 rounded-xs space-y-3 animate-in fade-in duration-200">
+                  <div className="flex items-center justify-between text-[11px] font-mono uppercase text-neutral-600">
+                    <span className="font-semibold text-neutral-900">Interactive Fit Simulator</span>
+                    <span className="text-blue-700 font-semibold">RWYSE Fit Guide</span>
                   </div>
 
                   <div className="grid grid-cols-2 gap-3 text-xs">
                     <div>
-                      <div className="flex justify-between text-[11px] text-neutral-400 mb-1">
+                      <div className="flex justify-between text-[11px] text-neutral-600 mb-1">
                         <span>Height:</span>
-                        <strong className="text-white font-mono">{userHeight} cm</strong>
+                        <strong className="text-neutral-900 font-mono">{userHeight} cm</strong>
                       </div>
                       <input
                         type="range"
@@ -369,13 +369,13 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                         max="205"
                         value={userHeight}
                         onChange={(e) => setUserHeight(Number(e.target.value))}
-                        className="w-full accent-white cursor-pointer"
+                        className="w-full accent-black cursor-pointer"
                       />
                     </div>
                     <div>
-                      <div className="flex justify-between text-[11px] text-neutral-400 mb-1">
+                      <div className="flex justify-between text-[11px] text-neutral-600 mb-1">
                         <span>Weight:</span>
-                        <strong className="text-white font-mono">{userWeight} kg</strong>
+                        <strong className="text-neutral-900 font-mono">{userWeight} kg</strong>
                       </div>
                       <input
                         type="range"
@@ -383,21 +383,21 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                         max="120"
                         value={userWeight}
                         onChange={(e) => setUserWeight(Number(e.target.value))}
-                        className="w-full accent-white cursor-pointer"
+                        className="w-full accent-black cursor-pointer"
                       />
                     </div>
                   </div>
 
-                  <div className="p-2.5 bg-black/60 border border-neutral-800 flex items-center justify-between text-xs">
+                  <div className="p-2.5 bg-white border border-neutral-200 flex items-center justify-between text-xs rounded-xs shadow-xs">
                     <div>
-                      <span className="text-neutral-400 block text-[10px] uppercase font-mono">Recommended Cut:</span>
-                      <strong className="text-white font-mono text-sm">
+                      <span className="text-neutral-500 block text-[10px] uppercase font-mono">Recommended Cut:</span>
+                      <strong className="text-neutral-900 font-mono text-sm">
                         Size {calculatedSize} ({userHeight > 182 ? 'Extended Drape' : 'True Box Drape'})
                       </strong>
                     </div>
                     <button
                       onClick={() => setSelectedSize(calculatedSize)}
-                      className="px-3 py-1 bg-white text-black text-[10px] font-bold uppercase tracking-wider hover:bg-neutral-200 cursor-pointer"
+                      className="px-3 py-1 bg-black text-white text-[10px] font-bold uppercase tracking-wider hover:bg-neutral-800 cursor-pointer shadow-xs"
                     >
                       Select Size {calculatedSize}
                     </button>
@@ -416,10 +416,10 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                       onClick={() => setSelectedSize(s.size)}
                       className={`py-3 text-xs font-semibold uppercase tracking-wider border transition-all cursor-pointer ${
                         outOfStock
-                          ? 'border-neutral-800 text-neutral-600 bg-neutral-950/40 cursor-not-allowed line-through'
+                          ? 'border-neutral-200 text-neutral-300 bg-neutral-100/50 cursor-not-allowed line-through'
                           : isSelected
-                          ? 'border-white bg-white text-black font-bold shadow-md'
-                          : 'border-neutral-800 text-neutral-200 hover:border-neutral-500 bg-neutral-900/50'
+                          ? 'border-black bg-black text-white font-bold shadow-md'
+                          : 'border-neutral-300 text-neutral-800 hover:border-black bg-white'
                       }`}
                     >
                       {s.size}
@@ -431,17 +431,17 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
               {/* Stock status indicator */}
               <div className="mt-2.5 min-h-[20px] text-[11px]">
                 {!selectedSize ? (
-                  <span className="text-neutral-400">Please choose a size to view availability</span>
+                  <span className="text-neutral-500">Please choose a size to view availability</span>
                 ) : isOutOfStock ? (
-                  <span className="text-red-400 font-semibold uppercase tracking-wider">
+                  <span className="text-red-600 font-semibold uppercase tracking-wider">
                     Sold Out in size {selectedSize}
                   </span>
                 ) : isLowStock ? (
-                  <span className="text-amber-300 font-medium uppercase tracking-wider">
+                  <span className="text-amber-800 font-medium uppercase tracking-wider">
                     ⚠ Low Stock · Only {currentSizeObj?.stock} remaining
                   </span>
                 ) : (
-                  <span className="text-emerald-400 flex items-center gap-1.5 font-medium tracking-wider">
+                  <span className="text-emerald-700 flex items-center gap-1.5 font-medium tracking-wider">
                     <Check className="w-3.5 h-3.5" /> Ready for immediate dispatch
                   </span>
                 )}
@@ -450,19 +450,19 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
 
             {/* Quantity Stepper */}
             <div className="flex items-center gap-4 pt-1">
-              <span className="text-xs uppercase tracking-wider text-neutral-400">Quantity:</span>
-              <div className="flex items-center border border-neutral-800 bg-neutral-950">
+              <span className="text-xs uppercase tracking-wider text-neutral-500">Quantity:</span>
+              <div className="flex items-center border border-neutral-300 bg-neutral-50">
                 <button
                   onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  className="p-2 px-3 text-neutral-400 hover:text-white transition-colors cursor-pointer"
+                  className="p-2 px-3 text-neutral-600 hover:text-black transition-colors cursor-pointer"
                   aria-label="Decrease quantity"
                 >
                   <Minus className="w-3.5 h-3.5" />
                 </button>
-                <span className="text-xs font-mono font-bold px-3">{quantity}</span>
+                <span className="text-xs font-mono font-bold px-3 text-neutral-900">{quantity}</span>
                 <button
                   onClick={() => setQuantity(quantity + 1)}
-                  className="p-2 px-3 text-neutral-400 hover:text-white transition-colors cursor-pointer"
+                  className="p-2 px-3 text-neutral-600 hover:text-black transition-colors cursor-pointer"
                   aria-label="Increase quantity"
                 >
                   <Plus className="w-3.5 h-3.5" />
@@ -477,8 +477,8 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                 onClick={handleAddToCart}
                 className={`w-full py-4 text-xs font-bold uppercase tracking-[0.25em] transition-all cursor-pointer shadow-lg ${
                   !selectedSize || isOutOfStock
-                    ? 'bg-neutral-800 text-neutral-500 cursor-not-allowed'
-                    : 'bg-white text-black hover:bg-neutral-200'
+                    ? 'bg-neutral-200 text-neutral-400 cursor-not-allowed'
+                    : 'bg-black text-white hover:bg-neutral-800'
                 }`}
               >
                 {!selectedSize
@@ -493,32 +493,32 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                 onClick={handleBuyNow}
                 className={`w-full py-3.5 text-xs font-semibold uppercase tracking-[0.25em] border transition-all cursor-pointer ${
                   !selectedSize || isOutOfStock
-                    ? 'border-neutral-800 text-neutral-600 cursor-not-allowed'
-                    : 'border-neutral-700 bg-neutral-900/60 text-white hover:border-white'
+                    ? 'border-neutral-200 text-neutral-300 cursor-not-allowed bg-neutral-50'
+                    : 'border-neutral-300 bg-white text-neutral-900 hover:border-black shadow-xs'
                 }`}
               >
                 Buy Now (Direct Checkout)
               </button>
 
               <a
-                href={`https://wa.me/21652000000?text=${encodeURIComponent(`Bonjour RWYSE, je souhaite commander la pièce "${product.name}" (${priceToUse} ${siteSettings.currency}) en taille ${selectedSize || 'standard'}.`)}`}
+                href={`https://wa.me/21629110567?text=${encodeURIComponent(`Bonjour RWYSE, je souhaite commander la pièce "${product.name}" (${priceToUse} ${siteSettings.currency}) en taille ${selectedSize || 'standard'}.`)}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full py-3 text-xs font-semibold uppercase tracking-[0.2em] bg-emerald-950/60 hover:bg-emerald-900/80 text-emerald-300 border border-emerald-700/60 flex items-center justify-center gap-2 transition-all cursor-pointer rounded-xs"
+                className="w-full py-3 text-xs font-semibold uppercase tracking-[0.2em] bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center justify-center gap-2 transition-all cursor-pointer rounded-xs shadow-xs"
               >
                 <span>Commander via WhatsApp</span>
               </a>
             </div>
 
             {/* Share & Trust badges */}
-            <div className="flex items-center justify-between pt-2 border-t border-neutral-800/80 text-[11px] text-neutral-400">
+            <div className="flex items-center justify-between pt-2 border-t border-neutral-200 text-[11px] text-neutral-500">
               <div className="flex items-center gap-1.5">
-                <ShieldCheck className="w-3.5 h-3.5 text-neutral-300" />
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
                 <span>Authentic RWYSE Garment</span>
               </div>
               <button
                 onClick={handleShare}
-                className="flex items-center gap-1.5 hover:text-white cursor-pointer uppercase tracking-wider"
+                className="flex items-center gap-1.5 hover:text-black cursor-pointer uppercase tracking-wider"
               >
                 <Share2 className="w-3.5 h-3.5" />
                 <span>Share Piece</span>
@@ -526,12 +526,12 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
             </div>
 
             {/* Editorial Information Accordion */}
-            <div className="pt-4 border-t border-neutral-800 space-y-3">
-              <div className="flex border-b border-neutral-800">
+            <div className="pt-4 border-t border-neutral-200 space-y-3">
+              <div className="flex border-b border-neutral-200">
                 <button
                   onClick={() => setActiveTab('details')}
                   className={`py-2 px-3 text-xs uppercase tracking-wider font-semibold border-b-2 cursor-pointer transition-colors ${
-                    activeTab === 'details' ? 'border-white text-white' : 'border-transparent text-neutral-400 hover:text-neutral-200'
+                    activeTab === 'details' ? 'border-black text-black' : 'border-transparent text-neutral-500 hover:text-black'
                   }`}
                 >
                   Features
@@ -539,7 +539,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                 <button
                   onClick={() => setActiveTab('fabric')}
                   className={`py-2 px-3 text-xs uppercase tracking-wider font-semibold border-b-2 cursor-pointer transition-colors ${
-                    activeTab === 'fabric' ? 'border-white text-white' : 'border-transparent text-neutral-400 hover:text-neutral-200'
+                    activeTab === 'fabric' ? 'border-black text-black' : 'border-transparent text-neutral-500 hover:text-black'
                   }`}
                 >
                   Fabric & Care
@@ -547,16 +547,16 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                 <button
                   onClick={() => setActiveTab('shipping')}
                   className={`py-2 px-3 text-xs uppercase tracking-wider font-semibold border-b-2 cursor-pointer transition-colors ${
-                    activeTab === 'shipping' ? 'border-white text-white' : 'border-transparent text-neutral-400 hover:text-neutral-200'
+                    activeTab === 'shipping' ? 'border-black text-black' : 'border-transparent text-neutral-500 hover:text-black'
                   }`}
                 >
                   Shipping & Returns
                 </button>
               </div>
 
-              <div className="p-3 bg-neutral-900/30 text-xs text-neutral-300 leading-relaxed min-h-[100px]">
+              <div className="p-3 bg-neutral-50 border border-neutral-200 text-xs text-neutral-700 leading-relaxed min-h-[100px] rounded-xs">
                 {activeTab === 'details' && (
-                  <ul className="space-y-1.5 list-disc list-inside text-neutral-300">
+                  <ul className="space-y-1.5 list-disc list-inside text-neutral-700">
                     {product.details.map((detail, idx) => (
                       <li key={idx}>{detail}</li>
                     ))}
@@ -564,7 +564,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                 )}
 
                 {activeTab === 'fabric' && (
-                  <div className="space-y-2">
+                  <div className="space-y-2 text-neutral-700">
                     <p><strong>Composition:</strong> {product.fabric}</p>
                     <p><strong>Fit:</strong> {product.fit}</p>
                     <p><strong>Care:</strong> {product.careInstructions}</p>
@@ -572,13 +572,13 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                 )}
 
                 {activeTab === 'shipping' && (
-                  <div className="space-y-2">
+                  <div className="space-y-2 text-neutral-700">
                     <div className="flex items-start gap-2">
-                      <Truck className="w-4 h-4 text-neutral-400 shrink-0 mt-0.5" />
+                      <Truck className="w-4 h-4 text-neutral-500 shrink-0 mt-0.5" />
                       <span><strong>Livraison Nationale Fixe 8 DT :</strong> Expédition en 24–48h sur tous les gouvernorats de Tunisie. Paiement uniquement à la livraison (Cash on Delivery).</span>
                     </div>
                     <div className="flex items-start gap-2">
-                      <RotateCcw className="w-4 h-4 text-neutral-400 shrink-0 mt-0.5" />
+                      <RotateCcw className="w-4 h-4 text-neutral-500 shrink-0 mt-0.5" />
                       <span><strong>14-Day Exchanges:</strong> Complimentary size exchange if garment is unworn with tags attached.</span>
                     </div>
                   </div>
@@ -592,13 +592,13 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
 
         {/* Recommended Pairings Section */}
         {relatedProducts.length > 0 && (
-          <div className="mt-24 pt-16 border-t border-neutral-800/80">
+          <div className="mt-24 pt-16 border-t border-neutral-200">
             <div className="flex items-center justify-between mb-8">
               <div>
-                <span className="text-[10px] font-mono uppercase tracking-[0.3em] text-neutral-400 block mb-1">
+                <span className="text-[10px] font-mono uppercase tracking-[0.3em] text-neutral-500 block mb-1">
                   COMPLETE THE LOOK
                 </span>
-                <h3 className="text-xl sm:text-2xl font-display font-extrabold uppercase text-white tracking-tight">
+                <h3 className="text-xl sm:text-2xl font-display font-extrabold uppercase text-neutral-900 tracking-tight">
                   Complementary Silhouettes
                 </h3>
               </div>
@@ -619,20 +619,20 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
       </div>
 
       {/* Sticky Bottom Bar for Mobile Devices */}
-      <div className="md:hidden fixed bottom-0 inset-x-0 bg-[#0c0c0f]/95 backdrop-blur-md border-t border-neutral-800 p-3 z-40 shadow-2xl safe-area-inset-bottom">
+      <div className="md:hidden fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur-md border-t border-neutral-200 p-3 z-40 shadow-2xl safe-area-inset-bottom">
         <div className="flex items-center justify-between gap-3 max-w-lg mx-auto">
           <div className="min-w-0 flex-1">
-            <span className="text-[11px] text-neutral-300 truncate font-medium block">{product.name}</span>
+            <span className="text-[11px] text-neutral-900 truncate font-medium block">{product.name}</span>
             <div className="flex items-baseline gap-2">
-              <span className="text-sm font-mono font-bold text-white">
+              <span className="text-sm font-mono font-bold text-neutral-900">
                 {priceToUse.toFixed(2)} {siteSettings.currency}
               </span>
               {selectedSize ? (
-                <span className="text-[10px] font-mono text-emerald-400 font-semibold uppercase">
+                <span className="text-[10px] font-mono text-emerald-700 font-semibold uppercase">
                   Taille : {selectedSize}
                 </span>
               ) : (
-                <span className="text-[10px] text-amber-400">Choisir taille</span>
+                <span className="text-[10px] text-amber-800">Choisir taille</span>
               )}
             </div>
           </div>
@@ -650,8 +650,8 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
             }}
             className={`px-5 py-3 text-xs font-bold uppercase tracking-wider transition-all cursor-pointer shadow-lg rounded-xs ${
               isOutOfStock
-                ? 'bg-neutral-800 text-neutral-500 cursor-not-allowed'
-                : 'bg-white text-black hover:bg-neutral-200'
+                ? 'bg-neutral-200 text-neutral-400 cursor-not-allowed'
+                : 'bg-black text-white hover:bg-neutral-800'
             }`}
           >
             {isOutOfStock ? 'Épuisé' : !selectedSize ? 'Sélectionner' : 'Ajouter au Panier'}

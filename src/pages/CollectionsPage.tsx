@@ -16,7 +16,7 @@ export const CollectionsPage: React.FC<CollectionsPageProps> = ({
   const { collections, products } = useStore();
 
   return (
-    <div className="w-full bg-[#0b0b0d] text-white min-h-screen py-10 sm:py-16">
+    <div className="w-full bg-[#FAFAFC] text-neutral-900 min-h-screen py-10 sm:py-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Header */}
@@ -24,15 +24,15 @@ export const CollectionsPage: React.FC<CollectionsPageProps> = ({
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="border-b border-neutral-800/80 pb-8 mb-12"
+          className="border-b border-neutral-200 pb-8 mb-12"
         >
-          <span className="text-[10px] font-mono uppercase tracking-[0.3em] text-neutral-400 block mb-2">
+          <span className="text-[10px] font-mono uppercase tracking-[0.3em] text-neutral-500 block mb-2">
             CURATED CAPSULES // ARCHIVE
           </span>
-          <h1 className="text-3xl sm:text-5xl font-display font-extrabold uppercase text-white tracking-tight">
+          <h1 className="text-3xl sm:text-5xl font-display font-extrabold uppercase text-neutral-900 tracking-tight">
             Collections & Lookbooks
           </h1>
-          <p className="mt-2 text-xs sm:text-sm text-neutral-400 max-w-xl font-light">
+          <p className="mt-2 text-xs sm:text-sm text-neutral-600 max-w-xl font-light">
             Each RWYSE capsule is developed as a coherent architectural wardrobe, exploring proportions, drape, and materiality.
           </p>
         </motion.div>
@@ -52,7 +52,7 @@ export const CollectionsPage: React.FC<CollectionsPageProps> = ({
                 className="space-y-8"
               >
                 {/* Lookbook Hero Card */}
-                <div className="relative aspect-[16/9] sm:aspect-[21/9] w-full overflow-hidden bg-neutral-900 border border-neutral-800 group">
+                <div className="relative aspect-[16/9] sm:aspect-[21/9] w-full overflow-hidden bg-neutral-100 border border-neutral-200 group rounded-xs shadow-xs">
                   <img
                     src={col.coverImage}
                     alt={col.name}
@@ -68,7 +68,7 @@ export const CollectionsPage: React.FC<CollectionsPageProps> = ({
                     <h2 className="text-2xl sm:text-4xl font-display font-extrabold uppercase text-white tracking-tight">
                       {col.name}
                     </h2>
-                    <p className="mt-2 text-xs sm:text-sm text-neutral-300 line-clamp-2 leading-relaxed font-light">
+                    <p className="mt-2 text-xs sm:text-sm text-neutral-200 line-clamp-2 leading-relaxed font-light">
                       {col.description}
                     </p>
                   </div>
@@ -78,12 +78,12 @@ export const CollectionsPage: React.FC<CollectionsPageProps> = ({
                 {collectionProducts.length > 0 && (
                   <div>
                     <div className="flex items-center justify-between mb-6">
-                      <span className="text-xs font-bold uppercase tracking-[0.2em] text-white">
+                      <span className="text-xs font-bold uppercase tracking-[0.2em] text-neutral-900">
                         Capsule Garments ({collectionProducts.length})
                       </span>
                       <button
                         onClick={onNavigateToShop}
-                        className="text-xs text-neutral-400 hover:text-white uppercase tracking-wider flex items-center gap-1.5 cursor-pointer"
+                        className="text-xs text-neutral-600 hover:text-black uppercase tracking-wider flex items-center gap-1.5 cursor-pointer font-medium"
                       >
                         <span>View In Shop</span>
                         <ArrowRight className="w-3.5 h-3.5" />

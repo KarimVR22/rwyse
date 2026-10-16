@@ -105,9 +105,9 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate, onNavigateToProd
       : lookbookItems.filter((item) => item.tag === activeLookbookFilter);
 
   return (
-    <div className="w-full bg-[#0b0b0d] text-white overflow-hidden selection:bg-white selection:text-black">
+    <div className="w-full bg-[#FAFAFC] text-neutral-900 overflow-hidden selection:bg-black selection:text-white">
       {/* 1. CINEMATIC HERO SECTION WITH RICH FRAMER-MOTION ANIMATIONS */}
-      <section className="relative h-[92vh] sm:h-[96vh] w-full flex items-end pb-14 sm:pb-24 overflow-hidden border-b border-white/[0.08]">
+      <section className="relative h-[92vh] sm:h-[96vh] w-full flex items-end pb-14 sm:pb-24 overflow-hidden border-b border-neutral-200">
         {/* Background Image with subtle Ken-Burns motion & multilayered scrim */}
         <div className="absolute inset-0 z-0">
           <motion.img
@@ -119,113 +119,184 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate, onNavigateToProd
             className="w-full h-full object-cover object-center filter brightness-[0.70] contrast-[1.1]"
             referrerPolicy="no-referrer"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#0b0b0d] via-black/50 to-black/30" />
-          <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-transparent to-black/80" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/20" />
+          <div className="absolute inset-0 bg-gradient-to-r from-black/75 via-transparent to-black/50" />
         </div>
 
         {/* Hero Content */}
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
-          <div className="max-w-3xl">
-            {/* Top Brand Subtitle */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.2 }}
-              className="inline-flex items-center gap-2.5 px-3 py-1 bg-black/60 backdrop-blur-md border border-white/20 mb-4 rounded-xs"
-            >
-              <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
-              <span className="text-[11px] font-mono tracking-[0.3em] uppercase text-neutral-200">
-                DROP 01 // RISE & GRIND IS LIVE
-              </span>
-            </motion.div>
+          <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8">
+            <div className="max-w-3xl">
+              {/* Top Brand Subtitle & Live Urgency Badge */}
+              <div className="flex flex-wrap items-center gap-3 mb-4">
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.8, delay: 0.2 }}
+                  className="inline-flex items-center gap-2.5 px-3 py-1 bg-black/60 backdrop-blur-md border border-white/20 rounded-xs shadow-lg"
+                >
+                  <span className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
+                  <span className="text-[11px] font-mono tracking-[0.3em] uppercase text-neutral-200">
+                    {siteSettings.heroBadgeText || 'DROP 01 // RISE & GRIND IS LIVE'}
+                  </span>
+                </motion.div>
 
-            {/* Main Headline */}
-            <motion.h1
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.9, delay: 0.35, ease: [0.16, 1, 0.3, 1] }}
-              className="text-4xl sm:text-6xl lg:text-7xl font-display font-extrabold uppercase tracking-tight text-white leading-[1.02]"
-            >
-              {siteSettings.heroTitle || 'RISE & GRIND.'}
-            </motion.h1>
+                {/* Live Social Proof Badge for Young Demographics */}
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.8, delay: 0.3 }}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-950/80 backdrop-blur-md border border-blue-500/40 text-[10px] font-mono text-blue-300 rounded-xs shadow-md"
+                >
+                  <Flame className="w-3 h-3 text-orange-400 fill-orange-400" />
+                  <span>24 personnes consultent ce drop</span>
+                </motion.div>
+              </div>
 
-            {/* Slogan Prose */}
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.5 }}
-              className="mt-4 sm:mt-5 text-sm sm:text-base text-neutral-300 max-w-xl leading-relaxed font-light"
-            >
-              {siteSettings.heroSubtitle ||
-                'The iconic Royal Blue 567 Oversized Hoodie and Heavyweight Balloon Sweatpants are now live. Engineered with 500 GSM loopback organic cotton.'}
-            </motion.p>
-
-            {/* CTAs */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.65 }}
-              className="mt-8 sm:mt-10 flex flex-wrap items-center gap-4"
-            >
-              <button
-                onClick={() =>
-                  onNavigate(siteSettings.heroCtaLink || '/product/rwyse-567-royal-blue-oversized-box-hoodie')
-                }
-                className="px-8 py-4 bg-white text-black text-xs font-bold uppercase tracking-[0.25em] hover:bg-neutral-200 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center gap-2 cursor-pointer shadow-2xl group"
+              {/* Main Headline */}
+              <motion.h1
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.9, delay: 0.35, ease: [0.16, 1, 0.3, 1] }}
+                className="text-4xl sm:text-6xl lg:text-7xl font-display font-extrabold uppercase tracking-tight text-white leading-[1.02]"
               >
-                <span>{siteSettings.heroCtaText || 'SHOP 567 BLUE HOODIE'}</span>
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1.5 transition-transform" />
-              </button>
+                {siteSettings.heroTitle || 'RISE & GRIND.'}
+              </motion.h1>
 
-              <button
-                onClick={() => onNavigate(siteSettings.heroSecondaryCtaLink || '/shop')}
-                className="px-7 py-4 bg-black/50 hover:bg-white/10 text-white border border-white/30 hover:border-white text-xs font-semibold uppercase tracking-[0.25em] backdrop-blur-md hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center gap-2 cursor-pointer"
+              {/* Slogan Prose */}
+              <motion.p
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: 0.5 }}
+                className="mt-4 sm:mt-5 text-sm sm:text-base text-neutral-300 max-w-xl leading-relaxed font-light"
               >
-                <span>{siteSettings.heroSecondaryCtaText || 'EXPLORE ALL PIECES'}</span>
-                <ChevronRight className="w-4 h-4" />
-              </button>
+                {siteSettings.heroSubtitle ||
+                  'The iconic Royal Blue 567 Oversized Hoodie and Heavyweight Balloon Sweatpants are now live. Engineered with 500 GSM loopback organic cotton.'}
+              </motion.p>
+
+              {/* CTAs */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: 0.65 }}
+                className="mt-8 sm:mt-10 flex flex-wrap items-center gap-4"
+              >
+                <button
+                  onClick={() =>
+                    onNavigate(siteSettings.heroCtaLink || '/product/rwyse-567-royal-blue-oversized-box-hoodie')
+                  }
+                  className="px-8 py-4 bg-white text-black text-xs font-bold uppercase tracking-[0.25em] hover:bg-neutral-200 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center gap-2 cursor-pointer shadow-2xl group"
+                >
+                  <span>{siteSettings.heroCtaText || 'SHOP 567 BLUE HOODIE'}</span>
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1.5 transition-transform" />
+                </button>
+
+                <button
+                  onClick={() => onNavigate(siteSettings.heroSecondaryCtaLink || '/shop')}
+                  className="px-7 py-4 bg-black/50 hover:bg-white/10 text-white border border-white/30 hover:border-white text-xs font-semibold uppercase tracking-[0.25em] backdrop-blur-md hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center gap-2 cursor-pointer"
+                >
+                  <span>{siteSettings.heroSecondaryCtaText || 'EXPLORE ALL PIECES'}</span>
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </motion.div>
+            </div>
+
+            {/* Right Side: Autonomous 3D Rotating Logo Medallion & Technical Drop Stats */}
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.8, delay: 0.7 }}
+              className="flex flex-col sm:flex-row lg:flex-col items-start lg:items-end gap-4"
+            >
+              {/* 3D Rotating Logo Medallion (Spins continuously on its own) */}
+              <div className="p-3 bg-black/70 backdrop-blur-md border border-white/20 rounded-xs shadow-2xl flex items-center gap-3">
+                <div className="perspective-1000">
+                  <div
+                    className={`preserve-3d ${
+                      siteSettings.logoAutoRotate !== false ? 'animate-medallion-spin' : ''
+                    }`}
+                  >
+                    <RwyseLogo
+                      className="h-7 w-auto text-white"
+                      variant="dark"
+                      autoSpin={siteSettings.logoAutoRotate !== false}
+                    />
+                  </div>
+                </div>
+                <div className="flex flex-col text-[9px] font-mono leading-tight">
+                  <span className="text-orange-400 font-bold tracking-widest uppercase">
+                    RWYSE // 2026 ARCHIVE
+                  </span>
+                  <span className="text-neutral-300 tracking-wider">
+                    AUTONOMOUS 3D ROTATION
+                  </span>
+                </div>
+              </div>
+
+              {/* Technical Specifications Tags */}
+              <div className="flex flex-col items-start lg:items-end text-left lg:text-right font-mono">
+                <span className="text-[10px] uppercase tracking-[0.3em] text-neutral-400">
+                  {siteSettings.heroOriginTag || 'ORIGIN // TUNISIA'}
+                </span>
+                <span className="text-xs text-white mt-1">
+                  {siteSettings.heroFabricTag || '500 GSM CUSTOM COMBED TERRY'}
+                </span>
+                <span className="text-[11px] text-emerald-400 mt-0.5 flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  {siteSettings.heroCodTag || 'PAIEMENT À LA LIVRAISON (COD)'}
+                </span>
+              </div>
             </motion.div>
           </div>
-
-          {/* Quick Drop Stats at Bottom Right */}
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8, delay: 0.8 }}
-            className="hidden md:flex absolute bottom-14 right-8 lg:right-12 flex-col items-end text-right"
-          >
-            <span className="text-[10px] font-mono uppercase tracking-[0.3em] text-neutral-400">
-              ORIGIN // TUNISIA
-            </span>
-            <span className="text-xs font-mono text-white mt-1">
-              500 GSM CUSTOM COMBED TERRY
-            </span>
-            <span className="text-[11px] font-mono text-emerald-400 mt-0.5 flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              PAIEMENT À LA LIVRAISON (COD)
-            </span>
-          </motion.div>
         </div>
       </section>
 
       {/* 2. INFINITE DUAL-LAYER MARQUEE */}
-      <div className="border-b border-neutral-800 bg-[#0e0e12] py-3.5 overflow-hidden select-none">
-        <div className="flex gap-10 whitespace-nowrap text-xs font-bold tracking-[0.35em] uppercase text-neutral-400">
-          <span className="text-white">RWYSE</span>
-          <span className="text-neutral-600">/</span>
-          <span>RISE WITH YOU</span>
-          <span className="text-neutral-600">/</span>
-          <span className="text-blue-400">567 ROYAL BLUE HOODIE</span>
-          <span className="text-neutral-600">/</span>
-          <span>CURVED BALLOON SWEATPANTS</span>
-          <span className="text-neutral-600">/</span>
-          <span>CONTRAST RINGER TEES</span>
-          <span className="text-neutral-600">/</span>
-          <span>500 GSM HEAVYWEIGHT COTTON</span>
-          <span className="text-neutral-600">/</span>
-          <span>CASH ON DELIVERY IN TUNISIA</span>
-          <span className="text-neutral-600">/</span>
-          <span className="text-white">WE RISE TOGETHER</span>
+      <div className="border-b border-neutral-200 bg-[#f4f4f7] py-3.5 overflow-hidden select-none">
+        <div className="animate-marquee flex gap-10 whitespace-nowrap text-xs font-bold tracking-[0.35em] uppercase text-neutral-700">
+          {(
+            siteSettings.marqueeText ||
+            'RWYSE / RISE WITH YOU / 567 ROYAL BLUE HOODIE / CURVED BALLOON SWEATPANTS / CONTRAST RINGER TEES / 500 GSM HEAVYWEIGHT COTTON / CASH ON DELIVERY IN TUNISIA / WE RISE TOGETHER'
+          )
+            .split('/')
+            .map((chunk, idx) => (
+              <React.Fragment key={idx}>
+                <span
+                  className={
+                    idx % 3 === 0
+                      ? 'text-black font-extrabold'
+                      : idx % 3 === 1
+                      ? 'text-blue-600 font-extrabold'
+                      : 'text-neutral-700'
+                  }
+                >
+                  {chunk.trim()}
+                </span>
+                <span className="text-neutral-300">/</span>
+              </React.Fragment>
+            ))}
+          {/* Duplicate for infinite loop illusion */}
+          {(
+            siteSettings.marqueeText ||
+            'RWYSE / RISE WITH YOU / 567 ROYAL BLUE HOODIE / CURVED BALLOON SWEATPANTS / CONTRAST RINGER TEES / 500 GSM HEAVYWEIGHT COTTON / CASH ON DELIVERY IN TUNISIA / WE RISE TOGETHER'
+          )
+            .split('/')
+            .map((chunk, idx) => (
+              <React.Fragment key={`dup-${idx}`}>
+                <span
+                  className={
+                    idx % 3 === 0
+                      ? 'text-black font-extrabold'
+                      : idx % 3 === 1
+                      ? 'text-blue-600 font-extrabold'
+                      : 'text-neutral-700'
+                  }
+                >
+                  {chunk.trim()}
+                </span>
+                <span className="text-neutral-300">/</span>
+              </React.Fragment>
+            ))}
         </div>
       </div>
 
@@ -237,37 +308,37 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate, onNavigateToProd
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: '-60px' }}
             transition={{ duration: 0.8 }}
-            className="relative overflow-hidden bg-gradient-to-r from-[#111117] to-[#151520] border border-neutral-800 p-8 sm:p-14"
+            className="relative overflow-hidden bg-gradient-to-r from-neutral-50 to-neutral-100 border border-neutral-200 p-8 sm:p-14 shadow-xs"
           >
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
               <div className="lg:col-span-7 space-y-5">
-                <div className="inline-flex items-center gap-2 text-xs font-mono text-blue-400 uppercase tracking-widest">
-                  <Flame className="w-4 h-4 fill-current text-blue-500" />
-                  <span>DROP 01 EXCLUSIVE SPOTLIGHT</span>
+                <div className="inline-flex items-center gap-2 text-xs font-mono text-blue-600 uppercase tracking-widest font-semibold">
+                  <Flame className="w-4 h-4 fill-current text-blue-600" />
+                  <span>{siteSettings.spotlightBadge || 'DROP 01 EXCLUSIVE SPOTLIGHT'}</span>
                 </div>
 
-                <h2 className="text-3xl sm:text-5xl font-display font-extrabold uppercase text-white tracking-tight leading-none">
+                <h2 className="text-3xl sm:text-5xl font-display font-extrabold uppercase text-neutral-900 tracking-tight leading-none">
                   {siteSettings.spotlightTitle || 'THE 567 ROYAL BLUE & BALLOON FIT'}
                 </h2>
 
-                <p className="text-xs sm:text-sm text-neutral-300 leading-relaxed max-w-xl font-light">
+                <p className="text-xs sm:text-sm text-neutral-600 leading-relaxed max-w-xl font-light">
                   {siteSettings.spotlightSubtitle ||
                     'Directly inspired by the official RWYSE campaign. Featuring high-density white 3D embroidery on the apex of the hood, artistic sleeve script, and matched with extreme barrel balloon sweatpants.'}
                 </p>
 
                 {/* Countdown Ticker */}
                 <div className="pt-2 flex items-center gap-4">
-                  <span className="text-xs font-mono uppercase text-neutral-400">Restock Drop Allocation:</span>
-                  <div className="flex items-center gap-2 font-mono text-xs text-white">
-                    <span className="px-2.5 py-1 bg-black/80 border border-neutral-700 font-bold">
+                  <span className="text-xs font-mono uppercase text-neutral-500">Restock Drop Allocation:</span>
+                  <div className="flex items-center gap-2 font-mono text-xs text-neutral-900">
+                    <span className="px-2.5 py-1 bg-white border border-neutral-300 font-bold shadow-xs">
                       {timeLeft.hours}h
                     </span>
                     <span>:</span>
-                    <span className="px-2.5 py-1 bg-black/80 border border-neutral-700 font-bold">
+                    <span className="px-2.5 py-1 bg-white border border-neutral-300 font-bold shadow-xs">
                       {timeLeft.minutes}m
                     </span>
                     <span>:</span>
-                    <span className="px-2.5 py-1 bg-black/80 border border-neutral-700 font-bold">
+                    <span className="px-2.5 py-1 bg-white border border-neutral-300 font-bold shadow-xs">
                       {timeLeft.seconds}s
                     </span>
                   </div>
@@ -276,15 +347,15 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate, onNavigateToProd
                 <div className="pt-4 flex flex-wrap items-center gap-4">
                   <button
                     onClick={() => onNavigateToProduct('rwyse-567-royal-blue-oversized-box-hoodie')}
-                    className="px-8 py-3.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold uppercase tracking-[0.25em] transition-all hover:scale-[1.02] flex items-center gap-2 cursor-pointer shadow-lg"
+                    className="px-8 py-3.5 bg-black hover:bg-neutral-800 text-white text-xs font-bold uppercase tracking-[0.25em] transition-all hover:scale-[1.02] flex items-center gap-2 cursor-pointer shadow-md"
                   >
-                    <span>ORDER 567 BLUE HOODIE</span>
+                    <span>{siteSettings.spotlightCtaText || 'ORDER 567 BLUE HOODIE'}</span>
                     <ArrowRight className="w-4 h-4" />
                   </button>
 
                   <button
                     onClick={() => onNavigate('/shop')}
-                    className="px-6 py-3.5 bg-transparent border border-neutral-700 text-xs font-semibold uppercase tracking-[0.2em] text-neutral-300 hover:text-white hover:border-white transition-colors cursor-pointer"
+                    className="px-6 py-3.5 bg-white border border-neutral-300 text-xs font-semibold uppercase tracking-[0.2em] text-neutral-800 hover:text-black hover:border-black transition-colors cursor-pointer shadow-xs"
                   >
                     DISCOVER THE PIECE
                   </button>
@@ -297,7 +368,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate, onNavigateToProd
                   whileHover={{ scale: 1.02 }}
                   transition={{ duration: 0.3 }}
                   onClick={() => onNavigateToProduct('rwyse-567-royal-blue-oversized-box-hoodie')}
-                  className="aspect-[3/4] bg-neutral-900 border border-neutral-800 overflow-hidden cursor-pointer group relative"
+                  className="aspect-[3/4] bg-neutral-100 border border-neutral-200 overflow-hidden cursor-pointer group relative shadow-xs"
                 >
                   <img
                     src={activeSpotlight1}
@@ -305,7 +376,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate, onNavigateToProd
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     referrerPolicy="no-referrer"
                   />
-                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent p-3">
+                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent p-3">
                     <span className="text-[10px] font-mono uppercase text-blue-300 block">STUDIO APEX 567</span>
                     <span className="text-xs font-bold font-mono text-white">175 {siteSettings.currency}</span>
                   </div>
@@ -315,7 +386,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate, onNavigateToProd
                   whileHover={{ scale: 1.02 }}
                   transition={{ duration: 0.3 }}
                   onClick={() => onNavigateToProduct('rwyse-567-royal-blue-oversized-box-hoodie')}
-                  className="aspect-[3/4] bg-neutral-900 border border-neutral-800 overflow-hidden cursor-pointer group relative"
+                  className="aspect-[3/4] bg-neutral-100 border border-neutral-200 overflow-hidden cursor-pointer group relative shadow-xs"
                 >
                   <img
                     src={activeSpotlight2}
@@ -323,7 +394,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate, onNavigateToProd
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     referrerPolicy="no-referrer"
                   />
-                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent p-3">
+                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent p-3">
                     <span className="text-[10px] font-mono uppercase text-blue-300 block">EDITORIAL DRAPE</span>
                     <span className="text-xs font-bold font-mono text-white">175 {siteSettings.currency}</span>
                   </div>
@@ -341,20 +412,20 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate, onNavigateToProd
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          className="flex flex-col md:flex-row md:items-end justify-between mb-12 border-b border-neutral-800/80 pb-6"
+          className="flex flex-col md:flex-row md:items-end justify-between mb-12 border-b border-neutral-200 pb-6"
         >
           <div>
-            <span className="text-[11px] font-mono uppercase tracking-[0.3em] text-neutral-400 block mb-2">
-              FLAGSHIP DROP // FOUNDATION
+            <span className="text-[11px] font-mono uppercase tracking-[0.3em] text-neutral-500 block mb-2">
+              {siteSettings.catalogBadge || 'FLAGSHIP DROP // FOUNDATION'}
             </span>
-            <h2 className="text-2xl sm:text-4xl font-display font-extrabold uppercase text-white tracking-tight">
-              Curated Silhouettes
+            <h2 className="text-2xl sm:text-4xl font-display font-extrabold uppercase text-neutral-900 tracking-tight">
+              {siteSettings.catalogTitle || 'Curated Silhouettes'}
             </h2>
           </div>
           <div className="mt-4 md:mt-0">
             <button
               onClick={() => onNavigate('/shop')}
-              className="group inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.2em] text-neutral-300 hover:text-white transition-colors cursor-pointer"
+              className="group inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.2em] text-neutral-700 hover:text-black transition-colors cursor-pointer"
             >
               <span>Explore All Products</span>
               <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1.5 transition-transform" />
@@ -379,26 +450,26 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate, onNavigateToProd
       </section>
 
       {/* 5. INTERACTIVE EDITORIAL LOOKBOOK */}
-      <section className="py-16 sm:py-24 bg-[#0e0e12] border-y border-neutral-800">
+      <section className="py-16 sm:py-24 bg-[#f5f5f8] border-y border-neutral-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-10 gap-4">
             <div>
-              <span className="text-[10px] font-mono uppercase tracking-[0.3em] text-neutral-400 block mb-1">
-                CAMPAIGN ARCHIVE // TUNIS MEDINA & STUDIO
+              <span className="text-[10px] font-mono uppercase tracking-[0.3em] text-neutral-500 block mb-1">
+                {siteSettings.lookbookBadge || 'CAMPAIGN ARCHIVE // TUNIS MEDINA & STUDIO'}
               </span>
-              <h2 className="text-2xl sm:text-4xl font-display font-extrabold uppercase text-white tracking-tight">
-                Authentic RWYSE Lookbook
+              <h2 className="text-2xl sm:text-4xl font-display font-extrabold uppercase text-neutral-900 tracking-tight">
+                {siteSettings.lookbookTitle || 'Authentic RWYSE Lookbook'}
               </h2>
             </div>
 
             {/* Filter controls */}
-            <div className="flex items-center gap-1.5 p-1 bg-neutral-900 border border-neutral-800 rounded-sm overflow-x-auto">
+            <div className="flex items-center gap-1.5 p-1 bg-white border border-neutral-300 rounded-sm overflow-x-auto shadow-xs">
               {(['all', 'hoodie', 'street', 'community'] as const).map((tag) => (
                 <button
                   key={tag}
                   onClick={() => setActiveLookbookFilter(tag)}
                   className={`px-3 py-1 text-xs uppercase tracking-wider font-semibold cursor-pointer transition-colors whitespace-nowrap ${
-                    activeLookbookFilter === tag ? 'bg-white text-black' : 'text-neutral-400 hover:text-white'
+                    activeLookbookFilter === tag ? 'bg-black text-white' : 'text-neutral-600 hover:text-black'
                   }`}
                 >
                   {tag === 'all'
@@ -423,7 +494,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate, onNavigateToProd
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.4, delay: idx * 0.05 }}
                 onClick={() => setSelectedPhotoModal(item.image)}
-                className="group relative aspect-[3/4] bg-neutral-900 border border-neutral-800 overflow-hidden cursor-pointer"
+                className="group relative aspect-[3/4] bg-neutral-100 border border-neutral-200 overflow-hidden cursor-pointer shadow-xs"
               >
                 <img
                   src={item.image}
@@ -431,14 +502,14 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate, onNavigateToProd
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                   referrerPolicy="no-referrer"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent p-5 flex flex-col justify-between opacity-90 group-hover:opacity-100 transition-opacity">
+                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent p-5 flex flex-col justify-between opacity-90 group-hover:opacity-100 transition-opacity">
                   <span className="text-[9px] font-mono uppercase tracking-widest text-white bg-black/80 px-2 py-0.5 border border-white/20 self-start">
                     {item.badge}
                   </span>
                   <div>
                     <h3 className="text-sm font-bold uppercase text-white tracking-wide">{item.title}</h3>
                     <p className="text-[11px] text-neutral-300 mt-1 line-clamp-2">{item.subtitle}</p>
-                    <span className="text-[10px] font-mono text-neutral-400 uppercase tracking-widest mt-2 flex items-center gap-1">
+                    <span className="text-[10px] font-mono text-neutral-300 uppercase tracking-widest mt-2 flex items-center gap-1">
                       <Eye className="w-3 h-3" /> Agrandir la photo
                     </span>
                   </div>
@@ -460,27 +531,29 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate, onNavigateToProd
               transition={{ duration: 0.7 }}
               className="lg:col-span-7 space-y-6"
             >
-              <span className="text-[10px] font-mono uppercase tracking-[0.3em] text-neutral-400 block">
-                THE RWYSE FOUNDATION
+              <span className="text-[10px] font-mono uppercase tracking-[0.3em] text-neutral-500 block">
+                {siteSettings.manifestoBadge || 'THE RWYSE FOUNDATION'}
               </span>
-              <h2 className="text-3xl sm:text-5xl font-display font-extrabold uppercase text-white tracking-tight leading-[1.08]">
-                "RISE WITH YOU" — BORN FOR AMBITION & BROTHERHOOD.
+              <h2 className="text-3xl sm:text-5xl font-display font-extrabold uppercase text-neutral-900 tracking-tight leading-[1.08]">
+                {siteSettings.manifestoTitle || '"RISE WITH YOU" — BORN FOR AMBITION & BROTHERHOOD.'}
               </h2>
-              <div className="space-y-4 text-xs sm:text-sm text-neutral-300 leading-relaxed font-light">
+              <div className="space-y-4 text-xs sm:text-sm text-neutral-600 leading-relaxed font-light">
                 <p>
-                  From the gym to the city streets, RWYSE represents radical discipline. We craft heavy 500 GSM loopback cotton garments engineered to accompany your daily grind.
+                  {siteSettings.manifestoParagraph1 ||
+                    'From the gym to the city streets, RWYSE represents radical discipline. We craft heavy 500 GSM loopback cotton garments engineered to accompany your daily grind.'}
                 </p>
                 <p>
-                  When you wear the Royal Blue 567 hoodie or the balloon sweatpants, you wear an architectural statement. We do not design disposable garments; we craft permanent silhouettes.
+                  {siteSettings.manifestoParagraph2 ||
+                    'When you wear the Royal Blue 567 hoodie or the balloon sweatpants, you wear an architectural statement. We do not design disposable garments; we craft permanent silhouettes.'}
                 </p>
               </div>
 
               <div className="pt-4 flex items-center gap-6">
                 <button
                   onClick={() => onNavigate('/about')}
-                  className="px-6 py-3.5 border border-neutral-700 hover:border-white text-xs font-bold uppercase tracking-[0.25em] text-white hover:bg-white hover:text-black transition-all cursor-pointer"
+                  className="px-6 py-3.5 border border-neutral-300 hover:border-black text-xs font-bold uppercase tracking-[0.25em] text-neutral-900 hover:bg-black hover:text-white transition-all cursor-pointer shadow-xs"
                 >
-                  Read Brand Manifesto
+                  {siteSettings.manifestoButtonText || 'Read Brand Manifesto'}
                 </button>
               </div>
             </motion.div>
@@ -492,7 +565,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate, onNavigateToProd
               transition={{ duration: 0.7 }}
               className="lg:col-span-5 grid grid-cols-2 gap-4"
             >
-              <div className="aspect-[3/4] bg-neutral-900 border border-neutral-800 overflow-hidden">
+              <div className="aspect-[3/4] bg-neutral-100 border border-neutral-200 overflow-hidden shadow-sm">
                 <img
                   src={activeCommunity1}
                   alt="RWYSE 567 Hood Embroidery"
@@ -500,7 +573,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate, onNavigateToProd
                   referrerPolicy="no-referrer"
                 />
               </div>
-              <div className="aspect-[3/4] bg-neutral-900 border border-neutral-800 overflow-hidden mt-8">
+              <div className="aspect-[3/4] bg-neutral-100 border border-neutral-200 overflow-hidden mt-8 shadow-sm">
                 <img
                   src={activeCommunity2}
                   alt="RWYSE Medina Street Ringer"
@@ -515,22 +588,22 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate, onNavigateToProd
 
       {/* 7. INSTAGRAM SHOWCASE (@RWY.SE) */}
       {siteSettings.isInstagramActive !== false && (
-        <section className="py-16 sm:py-20 border-t border-neutral-800/80 bg-[#09090b]">
+        <section className="py-16 sm:py-20 border-t border-neutral-200 bg-[#f9f9fb]">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between mb-8">
               <div className="flex items-center gap-2">
-                <Instagram className="w-4 h-4 text-neutral-400" />
-                <span className="text-xs font-bold uppercase tracking-[0.25em] text-white">
-                  OFFICIAL COMMUNITY @RWY.SE
+                <Instagram className="w-4 h-4 text-orange-600" />
+                <span className="text-xs font-bold uppercase tracking-[0.25em] text-neutral-900">
+                  {siteSettings.instagramSectionTitle || 'OFFICIAL COMMUNITY @RWY.SE'}
                 </span>
               </div>
               <a
-                href="https://instagram.com/rwy.se"
+                href={siteSettings.instagramUrl || 'https://www.instagram.com/rwy.se/'}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-xs text-neutral-400 hover:text-white uppercase tracking-wider underline cursor-pointer"
+                className="text-xs text-neutral-600 hover:text-black uppercase tracking-wider underline cursor-pointer font-medium"
               >
-                Follow @RWY.SE on Instagram
+                {siteSettings.instagramFollowText || 'Follow @RWY.SE on Instagram'}
               </a>
             </div>
 
@@ -546,10 +619,10 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate, onNavigateToProd
                   key={idx}
                   whileHover={{ scale: 1.03 }}
                   transition={{ duration: 0.25 }}
-                  href="https://instagram.com/rwy.se"
+                  href="https://www.instagram.com/rwy.se/"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="group relative aspect-square bg-neutral-900 border border-neutral-800 overflow-hidden block"
+                  className="group relative aspect-square bg-neutral-100 border border-neutral-200 overflow-hidden block shadow-xs"
                 >
                   <img
                     src={post.img}
@@ -558,10 +631,10 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate, onNavigateToProd
                     referrerPolicy="no-referrer"
                   />
                   <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 p-4 flex flex-col justify-between">
-                    <span className="text-[10px] font-mono text-neutral-300 uppercase tracking-widest">
+                    <span className="text-[10px] font-mono text-neutral-200 uppercase tracking-widest font-semibold">
                       @RWY.SE
                     </span>
-                    <p className="text-xs text-neutral-200 line-clamp-2">{post.caption}</p>
+                    <p className="text-xs text-neutral-100 line-clamp-2">{post.caption}</p>
                     <span className="text-[10px] font-mono text-white">❤ {post.likes}</span>
                   </div>
                 </motion.a>
